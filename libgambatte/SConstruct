@@ -1,4 +1,4 @@
-global_cflags = ARGUMENTS.get('CFLAGS', '-Wall -Wextra -fomit-frame-pointer -O3 -mips32 -fno-exceptions -march=mips32 -mtune=mips32r2 -I/opt/opendingux-toolchain/usr/include')
+global_cflags = ARGUMENTS.get('CFLAGS', '-Wall -Wextra -fomit-frame-pointer -O3 -fno-exceptions -march=mips32 -mtune=mips32r2 -I/opt/opendingux-toolchain/usr/include')
 global_cxxflags = ARGUMENTS.get('CXXFLAGS', global_cflags + ' -fno-exceptions -fno-rtti')
 global_defines = ' -DHAVE_STDINT_H'
 toolchain = '/opt/opendingux-toolchain/usr/bin/mipsel-linux-'

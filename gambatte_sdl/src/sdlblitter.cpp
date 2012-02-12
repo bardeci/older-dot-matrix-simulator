@@ -48,7 +48,6 @@ void SdlBlitter::setBufferDimensions(const unsigned int width, const unsigned in
 	surface = screen = SDL_SetVideoMode(320, 240, 16, screen ? screen->flags : startFlags);
 	menu_set_screen(screen);
 	surface = SDL_CreateRGBSurface(SDL_SWSURFACE, width, height, 16, 0, 0, 0, 0);
-	
 	//fprintf(stderr, "surface w: %d, h: %d, pitch: %d, bpp: %d\n", surface->w, surface->h, surface->pitch, surface->format->BitsPerPixel);
 	//fprintf(stderr, "hwscreen w: %d, h: %d, pitch: %d, bpp %d\n", screen->w, screen->h, screen->pitch, screen->format->BitsPerPixel);
 	//surface = SDL_CreateRGBSurface(SDL_HWSURFACE, width, height, screen->format->BitsPerPixel, 0, 0, 0, 0);
@@ -65,7 +64,6 @@ void SdlBlitter::setBufferDimensions(const unsigned int width, const unsigned in
 
 const SdlBlitter::PixelBuffer SdlBlitter::inBuffer() const {
 	PixelBuffer pb;
-	
 	if (overlay) {
 		pb.pixels = overlay->pixels[0];
 		pb.format = UYVY;
@@ -90,6 +88,7 @@ static int fps = 0;
 	
 void SdlBlitter::draw() {
 	clock_t cur_time;
+	size_t offset;
 	++frames;
 	cur_time = SDL_GetTicks();
 
@@ -101,20 +100,33 @@ void SdlBlitter::draw() {
 	if (!screen || !surface)
 		return;
 	
-	if (scaler == 1) {
-		SDL_Rect dst;
-		dst.x = (screen->w - surface->w) / 2;
-		dst.y = (screen->h - surface->h) / 2;
-		dst.w = surface->w;
-		dst.h = surface->h;
-		SDL_BlitSurface(surface, NULL, screen, &dst);
-	} else {
-		SDL_LockSurface(screen);
-		SDL_LockSurface(surface);
-		gb_upscale((uint32_t*)screen->pixels, (uint32_t*)surface->pixels);
-		SDL_UnlockSurface(surface);
-		SDL_UnlockSurface(screen);
+	switch(scaler) {
+		case 0:		/* Ayla's fullscreen scaler */
+			SDL_LockSurface(screen);
+			SDL_LockSurface(surface);
+			fullscreen_upscale((uint32_t*)screen->pixels, (uint32_t*)surface->pixels);
+			SDL_UnlockSurface(surface);
+			SDL_UnlockSurface(screen);
+			break;
+		case 1:		/* Ayla's 1.5x scaler */
+			SDL_LockSurface(screen);
+			SDL_LockSurface(surface);
+			offset = (2 * (320 - 240) / 2) + ((240 - 216) / 2) * screen->pitch;
+			scale15x((uint32_t*)((uint8_t *)screen->pixels + offset), (uint32_t*)surface->pixels);
+			SDL_UnlockSurface(surface);
+			SDL_UnlockSurface(screen);
+			break;
+		case 2:		/* no scaler */
+		default:
+			SDL_Rect dst;
+			dst.x = (screen->w - surface->w) / 2;
+			dst.y = (screen->h - surface->h) / 2;
+			dst.w = surface->w;
+			dst.h = surface->h;
+			SDL_BlitSurface(surface, NULL, screen, &dst);
+			break;
 	}
+	
 	/*
 	if (!overlay && surface != screen) {
 		if (surface->format->BitsPerPixel == 16)
@@ -142,7 +154,7 @@ void SdlBlitter::present() {
 }
 
 void SdlBlitter::toggleFullScreen() {
-	if (screen)
-		screen = SDL_SetVideoMode(screen->w, screen->h, screen->format->BitsPerPixel, screen->flags ^ SDL_FULLSCREEN);
-	menu_set_screen(screen);	
+	//if (screen)
+	//	screen = SDL_SetVideoMode(screen->w, screen->h, screen->format->BitsPerPixel, screen->flags ^ SDL_FULLSCREEN);
+	//menu_set_screen(screen);	
 }

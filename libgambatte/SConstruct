@@ -1,7 +1,19 @@
-global_cflags = ARGUMENTS.get('CFLAGS', '-Wall -Wextra -fomit-frame-pointer -O3 -fno-exceptions -march=mips32 -mtune=mips32r2 -I/opt/opendingux-toolchain/usr/include')
+target = ARGUMENTS.get('target', 0)
+if target == 'gcw0':
+    include_path = ' -I/opt/gcw0-toolchain/usr/mipsel-gcw0-linux-uclibc/sysroot/usr/include'
+    bin_path = '/opt/gcw0-toolchain/usr/bin/mipsel-linux-'
+    print "Building Gambatte library with GCW Zero toolchain..."
+elif target == 'od':
+    include_path = ' -Iopt/opendingux-toolchain/usr/include'
+    bin_path = '/opt/opendingux-toolchain/usr/bin/mipsel-linux-'
+    print "Building Gambatte library with OpenDingux toolchain..."
+else:
+    include_path = ''
+    bin_path = ''
+
+global_cflags = ARGUMENTS.get('CFLAGS', '-Wall -Wextra -fomit-frame-pointer -O3 -fno-exceptions -march=mips32 -mtune=mips32r2' + include_path)
 global_cxxflags = ARGUMENTS.get('CXXFLAGS', global_cflags + ' -fno-exceptions -fno-rtti')
 global_defines = ' -DHAVE_STDINT_H'
-toolchain = '/opt/opendingux-toolchain/usr/bin/mipsel-linux-'
 vars = Variables()
 vars.Add('CC')
 vars.Add('CXX')
@@ -10,8 +22,8 @@ env = Environment(CPPPATH = ['src', 'include', '../common'],
                   CFLAGS = global_cflags + global_defines,
                   CXXFLAGS = global_cxxflags + global_defines,
                   variables = vars,
-                  CC = toolchain + 'gcc',
-                  CXX = toolchain + 'g++'                  
+                  CC = bin_path + 'gcc',
+                  CXX = bin_path + 'g++'                  
                   )
 
 sourceFiles = Split('''

@@ -14,8 +14,9 @@ else:
     bin_path = ''
     sdl_path = ''
 
-global_cflags = ARGUMENTS.get('CFLAGS', '-Wall -Wextra -fomit-frame-pointer -O3 -march=mips32 -mtune=mips32r2' + include_path)
+global_cflags = ARGUMENTS.get('CFLAGS', '-Wall -Wextra -O2 -fomit-frame-pointer -ffunction-sections -ffast-math -fsingle-precision-constant -G0' + include_path)
 global_cxxflags = ARGUMENTS.get('CXXFLAGS', global_cflags + ' -fno-exceptions -fno-rtti')
+global_linkflags = ARGUMENTS.get('LINKFLAGS', '-Wl,--gc-sections')
 global_defines = ' -DHAVE_STDINT_H'
 
 vars = Variables()
@@ -27,7 +28,7 @@ env = Environment(CPPPATH = ['src', '../libgambatte/include', '../common'],
                   CXXFLAGS = global_cxxflags + global_defines,
                   CC = bin_path + 'gcc',
                   CXX = bin_path + 'g++',
-                  LINKFLAGS = '-lSDL_image',
+                  LINKFLAGS = global_linkflags + ' -lSDL_image',
                   variables = vars)
 
 env.ParseConfig(sdl_path + 'sdl-config --cflags --libs')

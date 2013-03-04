@@ -11,8 +11,9 @@ else:
     include_path = ''
     bin_path = ''
 
-global_cflags = ARGUMENTS.get('CFLAGS', '-Wall -Wextra -fomit-frame-pointer -O3 -fno-exceptions -march=mips32 -mtune=mips32r2' + include_path)
+global_cflags = ARGUMENTS.get('CFLAGS', '-Wall -Wextra -O2 -fomit-frame-pointer -ffunction-sections -ffast-math -fsingle-precision-constant -G0' + include_path)
 global_cxxflags = ARGUMENTS.get('CXXFLAGS', global_cflags + ' -fno-exceptions -fno-rtti')
+global_linkflags = ARGUMENTS.get('LINKFLAGS', '-Wl,--gc-sections')
 global_defines = ' -DHAVE_STDINT_H'
 vars = Variables()
 vars.Add('CC')
@@ -21,6 +22,7 @@ vars.Add('CXX')
 env = Environment(CPPPATH = ['src', 'include', '../common'],
                   CFLAGS = global_cflags + global_defines,
                   CXXFLAGS = global_cxxflags + global_defines,
+                  LINKFLAGS = global_linkflags,
                   variables = vars,
                   CC = bin_path + 'gcc',
                   CXX = bin_path + 'g++'                  

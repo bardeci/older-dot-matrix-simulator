@@ -1,0 +1,1 @@
+A port of the Gambatte gameboy emulator to OpenDingux. Also compatible with the hardfloat version of OpenDingux for the GCW Zero.

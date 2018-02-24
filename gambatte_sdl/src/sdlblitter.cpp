@@ -54,7 +54,7 @@ void SdlBlitter::setBufferDimensions(const unsigned int width, const unsigned in
 			break;
 		case 3:		/* Hardware 1.5x */
 			surface = SDL_SetVideoMode(160, 144, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
-			screen = SDL_SetVideoMode(214, 160, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
+			screen = SDL_SetVideoMode(208, 160, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			if (aspect_ratio_file)
 			{ 
 				fwrite("0", 1, 1, aspect_ratio_file);
@@ -108,17 +108,17 @@ void SdlBlitter::setScreenRes() {
 			screen = SDL_SetVideoMode(320, 240, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			break;
 		case 3:		/* Hardware 1.5x */
-			screen = SDL_SetVideoMode(214, 160, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
+			screen = SDL_SetVideoMode(208, 160, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			if (aspect_ratio_file)
 			{ 
-				fwrite("0", 1, 1, aspect_ratio_file);
+				fwrite("1", 1, 1, aspect_ratio_file);
 			}
 			break;
 		case 4:		/* Hardware Aspect */
 			screen = SDL_SetVideoMode(192, 144, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			if (aspect_ratio_file)
 			{ 
-				fwrite("0", 1, 1, aspect_ratio_file);
+				fwrite("1", 1, 1, aspect_ratio_file);
 			}
 			break;
 		case 5:		/* Hardware Fullscreen */

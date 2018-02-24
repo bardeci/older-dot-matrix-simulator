@@ -47,19 +47,28 @@ void SdlBlitter::setBufferDimensions(const unsigned int width, const unsigned in
 	//surface = screen = SDL_SetVideoMode(width * scale, height * scale, SDL_GetVideoInfo()->vfmt->BitsPerPixel == 16 ? 16 : 32, screen ? screen->flags : startFlags);
 	FILE* aspect_ratio_file = fopen("/sys/devices/platform/jz-lcd.0/keep_aspect_ratio", "w");
 	switch(scaler) {
-		case 0:		/* Ayla's fullscreen scaler */
+		case 0:		/* no scaler */
 		case 1:		/* Ayla's 1.5x scaler */
-		case 2:		/* no scaler */
+		case 2:		/* Ayla's fullscreen scaler */
 			surface = screen = SDL_SetVideoMode(320, 240, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			break;
-		case 3:		/* Hardware Aspect */
-			surface = screen = SDL_SetVideoMode(160, 144, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
+		case 3:		/* Hardware 1.5x */
+			surface = SDL_SetVideoMode(160, 144, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
+			screen = SDL_SetVideoMode(214, 160, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			if (aspect_ratio_file)
 			{ 
-				fwrite("1", 1, 1, aspect_ratio_file);
+				fwrite("0", 1, 1, aspect_ratio_file);
 			}
 			break;
-		case 4:		/* Hardware Fullscreen */
+		case 4:		/* Hardware Aspect */
+			surface = SDL_SetVideoMode(160, 144, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
+			screen = SDL_SetVideoMode(192, 144, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
+			if (aspect_ratio_file)
+			{ 
+				fwrite("0", 1, 1, aspect_ratio_file);
+			}
+			break;
+		case 5:		/* Hardware Fullscreen */
 			surface = screen = SDL_SetVideoMode(160, 144, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			if (aspect_ratio_file)
 			{ 
@@ -93,19 +102,26 @@ void SdlBlitter::setScreenRes() {
 	printf("setting appropiate screen res...\n");
 	FILE* aspect_ratio_file = fopen("/sys/devices/platform/jz-lcd.0/keep_aspect_ratio", "w");
 	switch(scaler) {
-		case 0:		/* Ayla's fullscreen scaler */
+		case 0:		/* no scaler */
 		case 1:		/* Ayla's 1.5x scaler */
-		case 2:		/* no scaler */
+		case 2:		/* Ayla's fullscreen scaler */
 			screen = SDL_SetVideoMode(320, 240, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			break;
-		case 3:		/* Hardware Aspect */
-			screen = SDL_SetVideoMode(160, 144, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
+		case 3:		/* Hardware 1.5x */
+			screen = SDL_SetVideoMode(214, 160, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			if (aspect_ratio_file)
 			{ 
-				fwrite("1", 1, 1, aspect_ratio_file);
+				fwrite("0", 1, 1, aspect_ratio_file);
 			}
 			break;
-		case 4:		/* Hardware Fullscreen */
+		case 4:		/* Hardware Aspect */
+			screen = SDL_SetVideoMode(192, 144, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
+			if (aspect_ratio_file)
+			{ 
+				fwrite("0", 1, 1, aspect_ratio_file);
+			}
+			break;
+		case 5:		/* Hardware Fullscreen */
 			screen = SDL_SetVideoMode(160, 144, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			if (aspect_ratio_file)
 			{ 
@@ -163,13 +179,6 @@ void SdlBlitter::draw() {
 		return;
 	
 	switch(scaler) {
-		case 0:		/* Ayla's fullscreen scaler */
-			SDL_LockSurface(screen);
-			SDL_LockSurface(surface);
-			fullscreen_upscale((uint32_t*)screen->pixels, (uint32_t*)surface->pixels);
-			SDL_UnlockSurface(surface);
-			SDL_UnlockSurface(screen);
-			break;
 		case 1:		/* Ayla's 1.5x scaler */
 			SDL_LockSurface(screen);
 			SDL_LockSurface(surface);
@@ -178,18 +187,17 @@ void SdlBlitter::draw() {
 			SDL_UnlockSurface(surface);
 			SDL_UnlockSurface(screen);
 			break;
-		case 2:		/* no scaler */
-			SDL_Rect dst;
-			dst.x = (screen->w - surface->w) / 2;
-			dst.y = (screen->h - surface->h) / 2;
-			dst.w = surface->w;
-			dst.h = surface->h;
-			SDL_BlitSurface(surface, NULL, screen, &dst);
+		case 2:		/* Ayla's fullscreen scaler */
+			SDL_LockSurface(screen);
+			SDL_LockSurface(surface);
+			fullscreen_upscale((uint32_t*)screen->pixels, (uint32_t*)surface->pixels);
+			SDL_UnlockSurface(surface);
+			SDL_UnlockSurface(screen);
 			break;
-		case 3:		/* Hardware Aspect */
-		case 4:		/* Hardware Fullscreen */
-			SDL_BlitSurface(surface, NULL, screen, NULL);
-			break;
+		case 0:		/* no scaler */
+		case 3:		/* Hardware 1.5x */
+		case 4:		/* Hardware Aspect */
+		case 5:		/* Hardware Fullscreen */
 		default:
 			SDL_Rect dst;
 			dst.x = (screen->w - surface->w) / 2;

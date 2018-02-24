@@ -44,6 +44,8 @@ public:
 	SdlBlitter(bool startFull = false, Uint8 scale = 1, bool yuv = false);
 	~SdlBlitter();
 	void setBufferDimensions(unsigned int width, unsigned int height);
+	void setScreenRes();
+	void force320x240();
 	const PixelBuffer inBuffer() const;
 	void draw();
 	void present();

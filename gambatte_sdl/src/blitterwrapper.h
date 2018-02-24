@@ -34,6 +34,8 @@ public:
 	struct Buf { gambatte::uint_least32_t* pixels; unsigned pitch; };
 	BlitterWrapper() : vsrci(0) {}
 	const Buf inBuf() const;
+	void setScreenRes() { blitter.setScreenRes(); }
+	void force320x240() { blitter.force320x240(); }
 	void draw();
 	void present() { blitter.present(); }
 	void toggleFullScreen() { blitter.toggleFullScreen(); }

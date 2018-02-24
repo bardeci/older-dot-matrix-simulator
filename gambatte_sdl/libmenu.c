@@ -36,72 +36,78 @@ int menu_main(menu_t *menu) {
 	int dirty;
     redraw(menu);
 	quit_menu = 0;
-        while (menu->quit == 0) {
+    while (menu->quit == 0) {
         dirty = 0;
 		while (SDL_PollEvent(&event)) {
-		switch (event.type) {
-			case SDL_QUIT:
-				exit(0);
-				break;
-			case SDL_KEYDOWN:
-				switch(event.key.keysym.sym) {
-					case SDLK_UP:
-						if (menu->selected_entry > 0) {
-							--menu->selected_entry;
-							dirty = 1;
-						} else {
-							menu->selected_entry = menu->n_entries - 1;
-							dirty = 1;
-						}
-						break;
-					case SDLK_DOWN:
-						if (menu->selected_entry < menu->n_entries - 1) {
-							++menu->selected_entry;
-							dirty = 1;
-						} else {
-							menu->selected_entry = 0;
-							dirty = 1;
-						}
-						break;
-					case SDLK_LEFT:
-						if (menu->entries[menu->selected_entry]->is_shiftable) {
-							if (menu->entries[menu->selected_entry]->selected_entry > 0) {
-								--menu->entries[menu->selected_entry]->selected_entry;
+			switch (event.type) {
+				case SDL_QUIT:
+					exit(0);
+					break;
+				case SDL_KEYDOWN:
+					switch(event.key.keysym.sym) {
+						case SDLK_UP:
+							if (menu->selected_entry > 0) {
+								--menu->selected_entry;
+								dirty = 1;
+							} else {
+								menu->selected_entry = menu->n_entries - 1;
 								dirty = 1;
 							}
-						}				
-						break;
-					case SDLK_RIGHT:
-						if (menu->entries[menu->selected_entry]->is_shiftable) {
-							if (menu->entries[menu->selected_entry]->selected_entry < menu->entries[menu->selected_entry]->n_entries - 1) {
-								++menu->entries[menu->selected_entry]->selected_entry;
+							break;
+						case SDLK_DOWN:
+							if (menu->selected_entry < menu->n_entries - 1) {
+								++menu->selected_entry;
+								dirty = 1;
+							} else {
+								menu->selected_entry = 0;
 								dirty = 1;
 							}
-						}
-						break;
-					case SDLK_RETURN: 	/* start button */
-					case SDLK_LCTRL:	/* A button */
-						if ((menu->entries[menu->selected_entry]->callback != NULL) && (!menu->entries[menu->selected_entry]->is_shiftable)) {
-							menu->entries[menu->selected_entry]->callback(menu);
-							redraw(menu);
-						}
-						break;
-					case SDLK_LALT: /* B button, being used as 'back' */
-						if (menu->back_callback != NULL) {
-							menu->back_callback(menu);
-						}
-						break;
-					default:
-						break;
-				}
-			default:
-				break;
+							break;
+						case SDLK_LEFT:
+							if (menu->entries[menu->selected_entry]->is_shiftable) {
+								if (menu->entries[menu->selected_entry]->selected_entry > 0) {
+									--menu->entries[menu->selected_entry]->selected_entry;
+									dirty = 1;
+								} else {
+									menu->entries[menu->selected_entry]->selected_entry = menu->entries[menu->selected_entry]->n_entries - 1;
+									dirty = 1;
+								}
+							}				
+							break;
+						case SDLK_RIGHT:
+							if (menu->entries[menu->selected_entry]->is_shiftable) {
+								if (menu->entries[menu->selected_entry]->selected_entry < menu->entries[menu->selected_entry]->n_entries - 1) {
+									++menu->entries[menu->selected_entry]->selected_entry;
+									dirty = 1;
+								} else {
+									menu->entries[menu->selected_entry]->selected_entry = 0;
+									dirty = 1;
+								}
+							}
+							break;
+						case SDLK_RETURN: 	/* start button */
+						case SDLK_LCTRL:	/* A button */
+							if ((menu->entries[menu->selected_entry]->callback != NULL) && (!menu->entries[menu->selected_entry]->is_shiftable)) {
+								menu->entries[menu->selected_entry]->callback(menu);
+								redraw(menu);
+							}
+							break;
+						case SDLK_LALT: /* B button, being used as 'back' */
+							if (menu->back_callback != NULL) {
+								menu->back_callback(menu);
+							}
+							break;
+						default:
+							break;
+					}
+				default:
+					break;
+			}
 		}
-	}
-	if (dirty) {
-		redraw(menu);
-	}
-	SDL_Delay(10);
+		if (dirty) {
+			redraw(menu);
+		}
+		SDL_Delay(10);
 	}
 	quit_menu = 0;
 	/* doing this twice is just an ugly hack to get round an 

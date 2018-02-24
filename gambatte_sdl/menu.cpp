@@ -59,6 +59,8 @@ void main_menu(gambatte::GB *gambatte, BlitterWrapper *blitter) {
 
     blitter_p->force320x240(); /* force the menu to be at 320x240 screen resolution */
 
+    SDL_EnableKeyRepeat(250, 83);
+
     menu_t *menu;
 	menu_entry_t *menu_entry;
     enum {RETURN = 0, SAVE_STATE = 1, LOAD_STATE = 2, SELECT_STATE = 3, OPTIONS = 4, RESTART = 5, QUIT = 6};
@@ -105,6 +107,8 @@ void main_menu(gambatte::GB *gambatte, BlitterWrapper *blitter) {
 	menu_main(menu);
     
     delete_menu(menu);
+
+    SDL_EnableKeyRepeat(0, 100);
 
     blitter_p->setScreenRes(); /* return to the previous screen resolution */
 }

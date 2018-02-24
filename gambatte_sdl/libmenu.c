@@ -49,11 +49,17 @@ int menu_main(menu_t *menu) {
 						if (menu->selected_entry > 0) {
 							--menu->selected_entry;
 							dirty = 1;
+						} else {
+							menu->selected_entry = menu->n_entries - 1;
+							dirty = 1;
 						}
 						break;
 					case SDLK_DOWN:
 						if (menu->selected_entry < menu->n_entries - 1) {
 							++menu->selected_entry;
+							dirty = 1;
+						} else {
+							menu->selected_entry = 0;
 							dirty = 1;
 						}
 						break;

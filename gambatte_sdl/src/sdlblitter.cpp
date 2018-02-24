@@ -215,15 +215,15 @@ void SdlBlitter::draw() {
 void SdlBlitter::present() {
 	if (!screen || !surface)
 		return;
-	//if (overlay) {
-		//SDL_Rect dstr = { 0, 0, screen->w, screen->h };
-		//SDL_UnlockYUVOverlay(overlay);
-		//SDL_DisplayYUVOverlay(overlay, &dstr);
-		//SDL_LockYUVOverlay(overlay);
-	//} else {
+	if (overlay) {
+		SDL_Rect dstr = { 0, 0, screen->w, screen->h };
+		SDL_UnlockYUVOverlay(overlay);
+		SDL_DisplayYUVOverlay(overlay, &dstr);
+		SDL_LockYUVOverlay(overlay);
+	} else {
 		//SDL_UpdateRect(screen, 0, 0, screen->w, screen->h);
 		SDL_Flip(screen);
-	//}
+	}
 }
 
 void SdlBlitter::toggleFullScreen() {

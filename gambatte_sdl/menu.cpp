@@ -195,9 +195,10 @@ static void callback_options(menu_t *caller_menu) {
     menu_entry = new_menu_entry(1);
     menu_entry_set_text(menu_entry, "Scaler");
     menu_add_entry(menu, menu_entry);
-    menu_entry_add_entry(menu_entry, "Fullscreen");
-    menu_entry_add_entry(menu_entry, "1.5x");
     menu_entry_add_entry(menu_entry, "None");
+    menu_entry_add_entry(menu_entry, "Software 1.5x");
+    menu_entry_add_entry(menu_entry, "Software Fullscreen");
+    menu_entry_add_entry(menu_entry, "Hardware 1.5x");
     menu_entry_add_entry(menu_entry, "Hardware Aspect");
     menu_entry_add_entry(menu_entry, "Hardware Fullscreen");
     menu_entry->selected_entry = blitter_p->getScaler();

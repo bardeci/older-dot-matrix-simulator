@@ -54,6 +54,11 @@ static gambatte::GB *gambatte_p;
 static BlitterWrapper *blitter_p;
 
 void main_menu(gambatte::GB *gambatte, BlitterWrapper *blitter) {
+    blitter_p = blitter;
+    gambatte_p = gambatte;
+
+    blitter_p->force320x240(); /* force the menu to be at 320x240 screen resolution */
+
     menu_t *menu;
 	menu_entry_t *menu_entry;
     enum {RETURN = 0, SAVE_STATE = 1, LOAD_STATE = 2, SELECT_STATE = 3, OPTIONS = 4, RESTART = 5, QUIT = 6};
@@ -97,12 +102,11 @@ void main_menu(gambatte::GB *gambatte, BlitterWrapper *blitter) {
 	menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_quit;
 
-	gambatte_p = gambatte;
-	blitter_p = blitter;
-
 	menu_main(menu);
     
-    delete_menu(menu);	
+    delete_menu(menu);
+
+    blitter_p->setScreenRes(); /* return to the previous screen resolution */
 }
 
 
@@ -194,6 +198,8 @@ static void callback_options(menu_t *caller_menu) {
     menu_entry_add_entry(menu_entry, "Fullscreen");
     menu_entry_add_entry(menu_entry, "1.5x");
     menu_entry_add_entry(menu_entry, "None");
+    menu_entry_add_entry(menu_entry, "Hardware Aspect");
+    menu_entry_add_entry(menu_entry, "Hardware Fullscreen");
     menu_entry->selected_entry = blitter_p->getScaler();
 
 

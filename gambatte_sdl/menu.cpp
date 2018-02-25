@@ -7,16 +7,38 @@
 
 #include "libmenu.h"
 #include "font12px.h"
+#include "sfont_gameboy.h"
 
 
 static SDL_Surface *screen;
 static SFont_Font* font;
 
+int init_fps_font() {
+    SDL_Surface *font_bitmap_surface = NULL;
+    SDL_RWops *RWops;
+    
+    RWops = SDL_RWFromMem(sfont_gameboy_fps, 1303);
+    font_bitmap_surface = IMG_LoadPNG_RW(RWops);
+    SDL_FreeRW(RWops);
+    if (!font_bitmap_surface) {
+        fprintf(stderr, "menu: font load error\n");
+        exit(1);
+    }
+    font = SFont_InitFont(font_bitmap_surface);
+    if (!font) {
+        fprintf(stderr, "menu: font init error\n");
+        exit(1);
+    }
+
+    libmenu_set_font(font);
+    return 0;
+}
+
 int init_menu() {
     SDL_Surface *font_bitmap_surface = NULL;
     SDL_RWops *RWops;
     
-	RWops = SDL_RWFromMem(font_12px, 12415);
+	RWops = SDL_RWFromMem(sfont_gameboy_black, 940);
     font_bitmap_surface = IMG_LoadPNG_RW(RWops);
     SDL_FreeRW(RWops);
     if (!font_bitmap_surface) {
@@ -51,21 +73,22 @@ static void callback_options(menu_t *caller_menu);
 static void callback_restart(menu_t *caller_menu);
 
 static gambatte::GB *gambatte_p;
-static BlitterWrapper *blitter_p;
+BlitterWrapper *blitter_p;
 
 void main_menu(gambatte::GB *gambatte, BlitterWrapper *blitter) {
     blitter_p = blitter;
     gambatte_p = gambatte;
 
-    blitter_p->force320x240(); /* force the menu to be at 320x240 screen resolution */
-
+    //blitter_p->force320x240(); /* force the menu to be at 320x240 screen resolution */
     SDL_EnableKeyRepeat(250, 83);
+    init_menu();
 
     menu_t *menu;
 	menu_entry_t *menu_entry;
     enum {RETURN = 0, SAVE_STATE = 1, LOAD_STATE = 2, SELECT_STATE = 3, OPTIONS = 4, RESTART = 5, QUIT = 6};
     
     menu = new_menu();
+    menu_set_header(menu, "Gambatte opendingux");
 	menu_set_title(menu, "Main Menu");
 	menu->back_callback = callback_menu_quit;
 	
@@ -95,7 +118,7 @@ void main_menu(gambatte::GB *gambatte, BlitterWrapper *blitter) {
     menu_entry->callback = callback_options;
 
 	menu_entry = new_menu_entry(0);
-	menu_entry_set_text(menu_entry, "Restart emulator");
+	menu_entry_set_text(menu_entry, "Reset game");
 	menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_restart;
     
@@ -109,8 +132,8 @@ void main_menu(gambatte::GB *gambatte, BlitterWrapper *blitter) {
     delete_menu(menu);
 
     SDL_EnableKeyRepeat(0, 100);
-
-    blitter_p->setScreenRes(); /* return to the previous screen resolution */
+    init_fps_font();
+    //blitter_p->setScreenRes(); /* switch to selected resolution */
 }
 
 
@@ -149,6 +172,7 @@ static void callback_selectstate(menu_t *caller_menu) {
     (void) caller_menu;
     menu = new_menu();
 
+    menu_set_header(menu, "Gambatte opendingux");
     menu_set_title(menu, "Select State");
 	menu->back_callback = callback_menu_quit;
 	
@@ -186,6 +210,7 @@ static void callback_options(menu_t *caller_menu) {
     (void) caller_menu;
     menu = new_menu();
         
+    menu_set_header(menu, "Gambatte opendingux");
     menu_set_title(menu, "Options");
 	menu->back_callback = callback_options_back;
 	
@@ -200,11 +225,11 @@ static void callback_options(menu_t *caller_menu) {
     menu_entry_set_text(menu_entry, "Scaler");
     menu_add_entry(menu, menu_entry);
     menu_entry_add_entry(menu_entry, "None");
-    menu_entry_add_entry(menu_entry, "Software 1.5x");
-    menu_entry_add_entry(menu_entry, "Software Fullscreen");
-    menu_entry_add_entry(menu_entry, "Hardware 1.5x");
-    menu_entry_add_entry(menu_entry, "Hardware Aspect");
-    menu_entry_add_entry(menu_entry, "Hardware Fullscreen");
+    menu_entry_add_entry(menu_entry, "Sw 1.5x");
+    menu_entry_add_entry(menu_entry, "Sw Full");
+    menu_entry_add_entry(menu_entry, "Hw 1.5x");
+    menu_entry_add_entry(menu_entry, "Hw Aspect");
+    menu_entry_add_entry(menu_entry, "Hw Full");
     menu_entry->selected_entry = blitter_p->getScaler();
 
 
@@ -221,6 +246,7 @@ static void callback_options(menu_t *caller_menu) {
 static void callback_options_back(menu_t *caller_menu) {
 	is_showing_fps = caller_menu->entries[SHOW_FPS]->selected_entry;
 	blitter_p->setScaler(caller_menu->entries[SCALER]->selected_entry);
+    blitter_p->setScreenRes(); /* switch to selected resolution */
     caller_menu->quit = 1;
 }
 

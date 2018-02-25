@@ -27,6 +27,7 @@ typedef struct {
 } menu_entry_t;
 
 struct Menu_t {
+	char *header;
 	char *title;
 	menu_entry_t **entries;
 	int n_entries;
@@ -36,12 +37,15 @@ struct Menu_t {
 	void (*back_callback)(menu_t *);
 };
 
+extern SDL_Surface *menuscreen;
+
 void libmenu_set_screen(SDL_Surface *set_screen);
 void libmenu_set_font(SFont_Font *set_font);
 int menu_main(menu_t *menu);
 void set_active_menu(menu_t *menu);
 menu_t *new_menu();
 void delete_menu(menu_t *menu);
+void menu_set_header(menu_t *menu, const char *header);
 void menu_set_title(menu_t *menu, const char *title);
 void menu_add_entry(menu_t *menu, menu_entry_t *entry);
 menu_entry_t *new_menu_entry(int is_shiftable);

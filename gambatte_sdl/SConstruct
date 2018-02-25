@@ -43,7 +43,7 @@ sourceFiles = Split('''
 			src/syncfunc.cpp
 			SFont.c
 			menu.cpp
-			libmenu.c
+			libmenu.cpp
 			scaler.c
 			../common/adaptivesleep.cpp
 			../common/resample/src/chainresampler.cpp

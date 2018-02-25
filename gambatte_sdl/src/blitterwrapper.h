@@ -36,6 +36,7 @@ public:
 	const Buf inBuf() const;
 	void setScreenRes() { blitter.setScreenRes(); }
 	void force320x240() { blitter.force320x240(); }
+	void scaleMenu() { blitter.scaleMenu(); }
 	void draw();
 	void present() { blitter.present(); }
 	void toggleFullScreen() { blitter.toggleFullScreen(); }

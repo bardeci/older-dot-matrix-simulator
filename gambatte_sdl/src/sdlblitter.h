@@ -46,6 +46,7 @@ public:
 	void setBufferDimensions(unsigned int width, unsigned int height);
 	void setScreenRes();
 	void force320x240();
+	void scaleMenu();
 	const PixelBuffer inBuffer() const;
 	void draw();
 	void present();

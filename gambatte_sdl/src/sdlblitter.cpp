@@ -53,16 +53,14 @@ void SdlBlitter::setBufferDimensions(const unsigned int width, const unsigned in
 			surface = screen = SDL_SetVideoMode(320, 240, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			break;
 		case 3:		/* Hardware 1.5x */
-			surface = SDL_SetVideoMode(160, 144, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
-			screen = SDL_SetVideoMode(208, 160, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
+			surface = screen = SDL_SetVideoMode(208, 160, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			if (aspect_ratio_file)
 			{ 
 				fwrite("0", 1, 1, aspect_ratio_file);
 			}
 			break;
 		case 4:		/* Hardware Aspect */
-			surface = SDL_SetVideoMode(160, 144, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
-			screen = SDL_SetVideoMode(192, 144, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
+			surface = screen = SDL_SetVideoMode(192, 144, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			if (aspect_ratio_file)
 			{ 
 				fwrite("0", 1, 1, aspect_ratio_file);
@@ -218,6 +216,43 @@ void SdlBlitter::draw() {
 	*/
 	
 	show_fps(screen, fps);
+}
+
+void SdlBlitter::scaleMenu() {
+	size_t offset;
+
+	if (!screen || !menuscreen)
+		return;
+	
+	switch(scaler) {
+		case 1:		/* Ayla's 1.5x scaler */
+			SDL_LockSurface(screen);
+			SDL_LockSurface(menuscreen);
+			offset = (2 * (320 - 240) / 2) + ((240 - 216) / 2) * screen->pitch;
+			scale15x((uint32_t*)((uint8_t *)screen->pixels + offset), (uint32_t*)menuscreen->pixels);
+			SDL_UnlockSurface(menuscreen);
+			SDL_UnlockSurface(screen);
+			break;
+		case 2:		/* Ayla's fullscreen scaler */
+			SDL_LockSurface(screen);
+			SDL_LockSurface(menuscreen);
+			fullscreen_upscale((uint32_t*)screen->pixels, (uint32_t*)menuscreen->pixels);
+			SDL_UnlockSurface(menuscreen);
+			SDL_UnlockSurface(screen);
+			break;
+		case 0:		/* no scaler */
+		case 3:		/* Hardware 1.5x */
+		case 4:		/* Hardware Aspect */
+		case 5:		/* Hardware Fullscreen */
+		default:
+			SDL_Rect dst;
+			dst.x = (screen->w - menuscreen->w) / 2;
+			dst.y = (screen->h - menuscreen->h) / 2;
+			dst.w = menuscreen->w;
+			dst.h = menuscreen->h;
+			SDL_BlitSurface(menuscreen, NULL, screen, &dst);
+			break;
+	}
 }
 
 void SdlBlitter::present() {

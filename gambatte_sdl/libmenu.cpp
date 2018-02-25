@@ -116,9 +116,11 @@ int menu_main(menu_t *menu) {
 	/* doing this twice is just an ugly hack to get round an 
 	 * opendingux pre-release hardware surfaces bug */
 	clear_surface(screen, 0);
-	SDL_Flip(screen);
+	redraw(menu);
+	//SDL_Flip(screen);
 	clear_surface(screen, 0);
-	SDL_Flip(screen);
+	redraw(menu); // redraw function flips the screen. delete and restore sdl_flip if problematic
+	//SDL_Flip(screen);
 	return menu->selected_entry;
 }
 

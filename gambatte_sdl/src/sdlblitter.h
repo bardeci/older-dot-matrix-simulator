@@ -31,7 +31,7 @@ public:
 	};
 private:
 	SDL_Surface *screen;
-	SDL_Surface *surface;
+	
 	SDL_Overlay *overlay;
 	Uint32 startFlags;
 	Uint8 scale;
@@ -43,6 +43,7 @@ private:
 public:
 	SdlBlitter(bool startFull = false, Uint8 scale = 1, bool yuv = false);
 	~SdlBlitter();
+	SDL_Surface *surface;
 	void setBufferDimensions(unsigned int width, unsigned int height);
 	void setScreenRes();
 	void force320x240();

@@ -23,6 +23,9 @@
 #include "../menu.h"
 #include "../scaler.h"
 
+SDL_Surface *lastframe;
+SDL_Surface *currframe;
+
 SdlBlitter::SdlBlitter(const bool startFull, const Uint8 scale, const bool yuv) :
 screen(NULL),
 surface(NULL),
@@ -41,6 +44,12 @@ SdlBlitter::~SdlBlitter() {
 	
 	if (surface != screen)
 		SDL_FreeSurface(surface);
+}
+
+void init_ghostframes() {
+	lastframe = SDL_CreateRGBSurface(SDL_SWSURFACE, 160, 144, 16, 0, 0, 0, 0);
+	currframe = SDL_CreateRGBSurface(SDL_SWSURFACE, 160, 144, 16, 0, 0, 0, 0);
+	SDL_SetAlpha(lastframe, SDL_SRCALPHA, 128);
 }
 
 void SdlBlitter::setBufferDimensions(const unsigned int width, const unsigned int height) {
@@ -82,6 +91,7 @@ void SdlBlitter::setBufferDimensions(const unsigned int width, const unsigned in
 	//surface = screen = SDL_SetVideoMode(320, 240, 16, screen ? screen->flags : startFlags);
 	menu_set_screen(screen);
 	surface = SDL_CreateRGBSurface(SDL_SWSURFACE, width, height, 16, 0, 0, 0, 0);
+	init_ghostframes();
 	//fprintf(stderr, "surface w: %d, h: %d, pitch: %d, bpp: %d\n", surface->w, surface->h, surface->pitch, surface->format->BitsPerPixel);
 	//fprintf(stderr, "hwscreen w: %d, h: %d, pitch: %d, bpp %d\n", screen->w, screen->h, screen->pitch, screen->format->BitsPerPixel);
 	//surface = SDL_CreateRGBSurface(SDL_HWSURFACE, width, height, screen->format->BitsPerPixel, 0, 0, 0, 0);
@@ -99,35 +109,41 @@ void SdlBlitter::setBufferDimensions(const unsigned int width, const unsigned in
 void SdlBlitter::setScreenRes() {
 	printf("setting appropiate screen res...\n");
 	FILE* aspect_ratio_file = fopen("/sys/devices/platform/jz-lcd.0/keep_aspect_ratio", "w");
+
 	switch(scaler) {
 		case 0:		/* no scaler */
 		case 1:		/* Ayla's 1.5x scaler */
 		case 2:		/* Ayla's fullscreen scaler */
-			screen = SDL_SetVideoMode(320, 240, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
+			if(screen->w != 320 || screen->h != 240)
+				screen = SDL_SetVideoMode(320, 240, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			break;
 		case 3:		/* Hardware 1.5x */
-			screen = SDL_SetVideoMode(208, 160, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
+			if(screen->w != 208 || screen->h != 160)
+				screen = SDL_SetVideoMode(208, 160, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			if (aspect_ratio_file)
 			{ 
 				fwrite("1", 1, 1, aspect_ratio_file);
 			}
 			break;
 		case 4:		/* Hardware Aspect */
-			screen = SDL_SetVideoMode(192, 144, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
+			if(screen->w != 192 || screen->h != 144)
+				screen = SDL_SetVideoMode(192, 144, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			if (aspect_ratio_file)
 			{ 
 				fwrite("1", 1, 1, aspect_ratio_file);
 			}
 			break;
 		case 5:		/* Hardware Fullscreen */
-			screen = SDL_SetVideoMode(160, 144, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
+			if(screen->w != 160 || screen->h != 144)
+				screen = SDL_SetVideoMode(160, 144, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			if (aspect_ratio_file)
 			{ 
 				fwrite("0", 1, 1, aspect_ratio_file);
 			}
 			break;
 		default:
-			screen = SDL_SetVideoMode(320, 240, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
+			if(screen->w != 320 || screen->h != 240)
+				screen = SDL_SetVideoMode(320, 240, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			break;
 	}
 	fclose(aspect_ratio_file);
@@ -158,6 +174,36 @@ inline void SdlBlitter::swScale() {
 	scaleBuffer<T>((T*)((Uint8*)(surface->pixels) + surface->offset), (T*)((Uint8*)(screen->pixels) + screen->offset), surface->w, surface->h, screen->pitch / screen->format->BytesPerPixel, scale);
 }
 
+void blend_frames(SDL_Surface *surface) {
+	SDL_Rect rect;
+	rect.x = 0;
+	rect.y = 0;
+	rect.w = 160;
+	rect.h = 144;
+	SDL_BlitSurface(surface, NULL, currframe, &rect);
+	SDL_BlitSurface(lastframe, NULL, currframe, &rect);
+}
+
+void store_lastframe(SDL_Surface *surface) {
+	SDL_Rect rect;
+	rect.x = 0;
+	rect.y = 0;
+	rect.w = 160;
+	rect.h = 144;
+	SDL_BlitSurface(surface, NULL, lastframe, &rect);
+}
+
+void store_lastframe2(SDL_Surface *surface) { // test function - currently not used - can delete
+	SDL_SetAlpha(surface, SDL_SRCALPHA, 224); // 0-255 opacity
+	SDL_Rect rect;
+	rect.x = 0;
+	rect.y = 0;
+	rect.w = 160;
+	rect.h = 144;
+	SDL_BlitSurface(surface, NULL, lastframe, &rect);
+	SDL_SetAlpha(surface, SDL_SRCALPHA, SDL_ALPHA_OPAQUE);
+}
+
 static int frames = 0;
 static clock_t old_time = 0;
 static int fps = 0;
@@ -175,36 +221,73 @@ void SdlBlitter::draw() {
 	}
 	if (!screen || !surface)
 		return;
+
+	int ghosting = 1; // WIP - TODO: Make a menu option for turning ghosting on/off.
 	
-	switch(scaler) {
-		case 1:		/* Ayla's 1.5x scaler */
-			SDL_LockSurface(screen);
-			SDL_LockSurface(surface);
-			offset = (2 * (320 - 240) / 2) + ((240 - 216) / 2) * screen->pitch;
-			scale15x((uint32_t*)((uint8_t *)screen->pixels + offset), (uint32_t*)surface->pixels);
-			SDL_UnlockSurface(surface);
-			SDL_UnlockSurface(screen);
-			break;
-		case 2:		/* Ayla's fullscreen scaler */
-			SDL_LockSurface(screen);
-			SDL_LockSurface(surface);
-			fullscreen_upscale((uint32_t*)screen->pixels, (uint32_t*)surface->pixels);
-			SDL_UnlockSurface(surface);
-			SDL_UnlockSurface(screen);
-			break;
-		case 0:		/* no scaler */
-		case 3:		/* Hardware 1.5x */
-		case 4:		/* Hardware Aspect */
-		case 5:		/* Hardware Fullscreen */
-		default:
-			SDL_Rect dst;
-			dst.x = (screen->w - surface->w) / 2;
-			dst.y = (screen->h - surface->h) / 2;
-			dst.w = surface->w;
-			dst.h = surface->h;
-			SDL_BlitSurface(surface, NULL, screen, &dst);
-			break;
+	if(ghosting == 0){
+		switch(scaler) {
+			case 1:		/* Ayla's 1.5x scaler */
+				SDL_LockSurface(screen);
+				SDL_LockSurface(surface);
+				offset = (2 * (320 - 240) / 2) + ((240 - 216) / 2) * screen->pitch;
+				scale15x((uint32_t*)((uint8_t *)screen->pixels + offset), (uint32_t*)surface->pixels);
+				SDL_UnlockSurface(surface);
+				SDL_UnlockSurface(screen);
+				break;
+			case 2:		/* Ayla's fullscreen scaler */
+				SDL_LockSurface(screen);
+				SDL_LockSurface(surface);
+				fullscreen_upscale((uint32_t*)screen->pixels, (uint32_t*)surface->pixels);
+				SDL_UnlockSurface(surface);
+				SDL_UnlockSurface(screen);
+				break;
+			case 0:		/* no scaler */
+			case 3:		/* Hardware 1.5x */
+			case 4:		/* Hardware Aspect */
+			case 5:		/* Hardware Fullscreen */
+			default:
+				SDL_Rect dst;
+				dst.x = (screen->w - surface->w) / 2;
+				dst.y = (screen->h - surface->h) / 2;
+				dst.w = surface->w;
+				dst.h = surface->h;
+				SDL_BlitSurface(surface, NULL, screen, &dst);
+				break;
+		}
+	} else if(ghosting == 1){
+		blend_frames(surface);
+		store_lastframe(surface);
+		switch(scaler) {
+			case 1:		/* Ayla's 1.5x scaler */
+				SDL_LockSurface(screen);
+				SDL_LockSurface(currframe);
+				offset = (2 * (320 - 240) / 2) + ((240 - 216) / 2) * screen->pitch;
+				scale15x((uint32_t*)((uint8_t *)screen->pixels + offset), (uint32_t*)currframe->pixels);
+				SDL_UnlockSurface(currframe);
+				SDL_UnlockSurface(screen);
+				break;
+			case 2:		/* Ayla's fullscreen scaler */
+				SDL_LockSurface(screen);
+				SDL_LockSurface(currframe);
+				fullscreen_upscale((uint32_t*)screen->pixels, (uint32_t*)currframe->pixels);
+				SDL_UnlockSurface(currframe);
+				SDL_UnlockSurface(screen);
+				break;
+			case 0:		/* no scaler */
+			case 3:		/* Hardware 1.5x */
+			case 4:		/* Hardware Aspect */
+			case 5:		/* Hardware Fullscreen */
+			default:
+				SDL_Rect dst;
+				dst.x = (screen->w - currframe->w) / 2;
+				dst.y = (screen->h - currframe->h) / 2;
+				dst.w = currframe->w;
+				dst.h = currframe->h;
+				SDL_BlitSurface(currframe, NULL, screen, &dst);
+				break;
+		}
 	}
+	
 	
 	/*
 	if (!overlay && surface != screen) {
@@ -274,3 +357,5 @@ void SdlBlitter::toggleFullScreen() {
 	//	screen = SDL_SetVideoMode(screen->w, screen->h, screen->format->BitsPerPixel, screen->flags ^ SDL_FULLSCREEN);
 	//menu_set_screen(screen);	
 }
+
+

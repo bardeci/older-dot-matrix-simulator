@@ -133,12 +133,50 @@ static void display_menu(SDL_Surface *surface, menu_t *menu) {
     char *text;
     char buffer[64];
     int width;
+
+    int linelimit = 13;
+    int posbegin = 0;
+    int posend = menu->n_entries;
+    int uparrow = 0;
+    int downarrow = 0;
+    if(menu->n_entries > linelimit){ // scroll looping
+    	if(menu->selected_entry <= 6){
+    		posbegin = 0;
+    		posend = posbegin + linelimit;
+    		uparrow = 0;
+    		downarrow = 1;
+    	} else if(menu->selected_entry > 6){
+    		if((menu->selected_entry + 6) < menu->n_entries){
+    			posbegin = menu->selected_entry - 6;
+    			posend = menu->selected_entry + 7;
+    		} else {
+    			posbegin = menu->n_entries - linelimit;
+    			posend = menu->n_entries;
+    		}
+    		if((menu->selected_entry + 7) < menu->n_entries){
+    			uparrow = 1;
+    			downarrow = 1;
+    		} else {
+    			uparrow = 1;
+    			downarrow = 0;
+    		}
+    	}
+    } else {
+    	uparrow = 0;
+    	downarrow = 0;
+    }
     const int highlight_margin = 0;
     SFont_WriteCenter(surface, font, line * font_height, menu->header);
     line += 2;
     SFont_WriteCenter(surface, font, line * font_height, menu->title);
-	line += 2;
-	for (i = 0; i < menu->n_entries; i++) {
+    if(uparrow == 1){
+    	line += 1;
+    	SFont_WriteCenter(surface, font, line * font_height, "{"); // up arrow
+    	line += 1;
+    } else {
+    	line += 2;
+    }
+	for (i = posbegin; i < posend; i++) {
 		if (menu->entries[i]->is_shiftable) {
 			sprintf(buffer, "%s: <%s>", menu->entries[i]->text, menu->entries[i]->entries[menu->entries[i]->selected_entry]);
 			text = buffer;
@@ -156,6 +194,9 @@ static void display_menu(SDL_Surface *surface, menu_t *menu) {
 		}
 		line++;
 	}
+	if(downarrow == 1){
+    	SFont_WriteCenter(surface, font, line * font_height, "}"); // down arrow
+    }
 }
 
 menu_t *new_menu() {

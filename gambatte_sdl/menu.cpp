@@ -9,6 +9,11 @@
 #include "font12px.h"
 #include "sfont_gameboy.h"
 
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <dirent.h>
+
 
 static SDL_Surface *screen;
 static SFont_Font* font;
@@ -72,6 +77,8 @@ static void callback_selectedstate(menu_t *caller_menu);
 static void callback_options(menu_t *caller_menu);
 static void callback_restart(menu_t *caller_menu);
 
+static void callback_selectpalette(menu_t *caller_menu); // TEST FUNCTION
+
 static gambatte::GB *gambatte_p;
 BlitterWrapper *blitter_p;
 
@@ -117,6 +124,11 @@ void main_menu(gambatte::GB *gambatte, BlitterWrapper *blitter) {
 	menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_options;
 
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "Change Palette"); // TEST FUNCTION
+    menu_add_entry(menu, menu_entry);
+    menu_entry->callback = callback_selectpalette;
+
 	menu_entry = new_menu_entry(0);
 	menu_entry_set_text(menu_entry, "Reset game");
 	menu_add_entry(menu, menu_entry);
@@ -158,6 +170,17 @@ static void callback_loadstate(menu_t *caller_menu) {
 
 static void callback_restart(menu_t *caller_menu) {
     gambatte_p->reset();
+    caller_menu->quit = 1;
+}
+
+static void changepalette(menu_t *caller_menu) { // TEST FUNCTION
+    for (int i = 0; i < 3; ++i)
+    {
+        gambatte_p->setDmgPaletteColor(i, 0, 0x64960a);
+        gambatte_p->setDmgPaletteColor(i, 1, 0x1b7e3e);
+        gambatte_p->setDmgPaletteColor(i, 2, 0x084e3c);
+        gambatte_p->setDmgPaletteColor(i, 3, 0x003236);
+    }
     caller_menu->quit = 1;
 }
 
@@ -260,3 +283,99 @@ void show_fps(SDL_Surface *surface, int fps) {
 		SFont_Write(surface, font, 0, 0, buffer);
 	}
 }
+
+/* ==================== SELECT PALETTE MENU =========================== */
+
+struct dirent **palettelist = NULL;
+int numpalettes;
+
+static void callback_selectedpalette(menu_t *caller_menu);
+static void callback_selectpalette_back(menu_t *caller_menu);
+static int parse_ext(const struct dirent *dir);
+
+static void callback_selectpalette(menu_t *caller_menu) {
+    printf("opening palette menu...\n");
+
+    //sprintf(palettedir, "%s/.ohboy/palettes", getenv("HOME"));
+    //printf("palettedir: %s\n", palettedir);
+
+    menu_t *menu;
+    menu_entry_t *menu_entry;
+    (void) caller_menu;
+    menu = new_menu();
+
+    menu_set_header(menu, "Gambatte opendingux");
+    menu_set_title(menu, "Select Palette");
+    menu->back_callback = callback_selectpalette_back;
+
+    numpalettes = scandir("/usr/local/home/.gambatte/palettes", &palettelist, parse_ext, alphasort);
+    printf("numpalettes = %i\n", numpalettes - 2);
+    if (numpalettes <= 0) {
+        printf("scandir failed. numpalettes = %i\n", numpalettes);
+    } else {
+        printf("scandir success. numpalettes = %i\n", numpalettes - 2);
+        for (int i = 2; i < numpalettes; ++i){
+            printf("%s\n", palettelist[i]->d_name);
+            menu_entry = new_menu_entry(0);
+            menu_entry_set_text(menu_entry, palettelist[i]->d_name);
+            menu_add_entry(menu, menu_entry);
+            menu_entry->callback = callback_selectedpalette;
+        }
+    }
+    
+    menu_main(menu);
+    delete_menu(menu);
+
+    for (int i = 0; i < numpalettes; ++i){
+        free(palettelist[i]);
+    }
+    free(palettelist);
+}
+
+static int parse_ext(const struct dirent *dir) {
+    if(!dir)
+        return 0;
+
+    if(dir->d_type == DT_REG) {
+        const char *ext = strrchr(dir->d_name,'.');
+        if((!ext) || (ext == dir->d_name)) {
+            return 0;
+        } else {
+            if(strcmp(ext, ".pal") == 0)
+                return 1;
+        }
+    }
+}
+
+static void callback_selectedpalette(menu_t *caller_menu) {
+    printf("name: %s\n",palettelist[caller_menu->selected_entry + 2]->d_name);
+    char fullfilepath[64];
+    Uint32 values[12];
+    sprintf(fullfilepath, "/usr/local/home/.gambatte/palettes/%s",palettelist[caller_menu->selected_entry + 2]->d_name);
+    printf("%s\n", fullfilepath);
+    FILE * fpal;
+    fpal = fopen(fullfilepath, "r");
+    int j = 0;
+    for (int i = 0; i < 20; ++i) {
+        if(fscanf(fpal, "%x", &values[j]) == 1){
+            printf("val%i: %#08x \n", j, values[j]);
+            j++;
+        }
+    }
+    if (j == 12){ // palette values were successfully loaded
+        int m = 0;
+        for (int i = 0; i < 3; ++i) {
+            for (int k = 0; k < 4; ++k) {
+                gambatte_p->setDmgPaletteColor(i, k, values[m]);
+                m++;
+            }
+        }
+    }
+    caller_menu->quit = 1;
+}
+
+static void callback_selectpalette_back(menu_t *caller_menu) {
+    caller_menu->quit = 1;
+}
+
+

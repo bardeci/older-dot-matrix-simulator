@@ -133,7 +133,7 @@ static void display_menu(SDL_Surface *surface, menu_t *menu) {
     char *text;
     char buffer[64];
     int width;
-    const int highlight_margin = 2;
+    const int highlight_margin = 0;
     SFont_WriteCenter(surface, font, line * font_height, menu->header);
     line += 2;
     SFont_WriteCenter(surface, font, line * font_height, menu->title);

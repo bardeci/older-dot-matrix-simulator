@@ -26,7 +26,7 @@ static SFont_Font* font = NULL;
 
 SDL_Surface *menuscreen;
 SDL_Surface *menuscreencolored;
-uint32_t menupalwhite = 0xFFFFFF, menupalblack = 0x000000;
+uint32_t menupalblack = 0x000000, menupaldark = 0x505050, menupallight = 0xA0A0A0, menupalwhite = 0xFFFFFF;
 
 void libmenu_set_screen(SDL_Surface *set_screen) {
 	screen = set_screen;
@@ -168,13 +168,15 @@ static void display_menu(SDL_Surface *surface, menu_t *menu) {
     	downarrow = 0;
     }
     const int highlight_margin = 0;
+    paint_titlebar();
+    line ++;
     SFont_WriteCenter(surface, font, line * font_height, menu->header);
-    line += 2;
+    line ++;
     SFont_WriteCenter(surface, font, line * font_height, menu->title);
     if(uparrow == 1){
-    	line += 1;
+    	line ++;
     	SFont_WriteCenter(surface, font, line * font_height, "{"); // up arrow
-    	line += 1;
+    	line ++;
     } else {
     	line += 2;
     }
@@ -275,6 +277,14 @@ void menu_entry_set_text(menu_entry_t *entry, const char *text) {
 	strcpy(entry->text, text);
 }
 
+void menu_entry_set_text_no_ext(menu_entry_t *entry, const char *text) { // always removes last 4 characters
+	if (entry->text != NULL) {
+		free(entry->text);
+	}
+	entry->text = (char *)calloc((strlen(text)-3), sizeof(char));
+	strncpy(entry->text, text, (strlen(text)-4));
+}
+
 void menu_entry_add_entry(menu_entry_t *entry, const char* text) {
 	assert(entry->is_shiftable == 1);
 	++entry->n_entries;
@@ -287,8 +297,10 @@ void callback_menu_quit(menu_t *caller_menu) {
 	caller_menu->quit = 1;
 }
 
-void set_menu_palette(uint32_t valwhite, uint32_t valblack) {
+void set_menu_palette(uint32_t valwhite, uint32_t vallight, uint32_t valdark, uint32_t valblack) {
 		menupalwhite = valwhite;
+		menupallight = vallight;
+		menupaldark = valdark;
 		menupalblack = valblack;
 }
 
@@ -301,6 +313,16 @@ void free_menusurfaces(){
 	SDL_FreeSurface(menuscreen);
 	SDL_FreeSurface(menuscreencolored);
 }
+
+void paint_titlebar(){
+	SDL_Rect rect;
+    rect.x = 0;
+    rect.y = 8;
+    rect.w = 160;
+    rect.h = 16;
+    SDL_FillRect(menuscreen, &rect, 0xA0A0A0);
+}
+
 
 static void invert_rect(SDL_Surface* surface, SDL_Rect *rect) {
 	/* FIXME: with 32 bit color modes, alpha will be inverted */

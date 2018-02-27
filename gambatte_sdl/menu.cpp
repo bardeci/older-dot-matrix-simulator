@@ -96,7 +96,7 @@ void main_menu(gambatte::GB *gambatte, BlitterWrapper *blitter) {
     enum {RETURN = 0, SAVE_STATE = 1, LOAD_STATE = 2, SELECT_STATE = 3, OPTIONS = 4, RESTART = 5, QUIT = 6};
     
     menu = new_menu();
-    menu_set_header(menu, "Gambatte opendingux");
+    menu_set_header(menu, "GCW-Gambatte (WIP)");
 	menu_set_title(menu, "Main Menu");
 	menu->back_callback = callback_menu_quit;
 	
@@ -186,7 +186,7 @@ static void callback_selectstate(menu_t *caller_menu) {
     (void) caller_menu;
     menu = new_menu();
 
-    menu_set_header(menu, "Gambatte opendingux");
+    menu_set_header(menu, "GCW-Gambatte (WIP)");
     menu_set_title(menu, "Select State");
 	menu->back_callback = callback_menu_quit;
 	
@@ -224,7 +224,7 @@ static void callback_options(menu_t *caller_menu) {
     (void) caller_menu;
     menu = new_menu();
         
-    menu_set_header(menu, "Gambatte opendingux");
+    menu_set_header(menu, "GCW-Gambatte (WIP)");
     menu_set_title(menu, "Options");
 	menu->back_callback = callback_options_back;
 	
@@ -291,7 +291,7 @@ static void callback_selectpalette(menu_t *caller_menu) {
     (void) caller_menu;
     menu = new_menu();
 
-    menu_set_header(menu, "Gambatte opendingux");
+    menu_set_header(menu, "GCW-Gambatte (WIP)");
     menu_set_title(menu, "Select Palette");
     menu->back_callback = callback_selectpalette_back;
 
@@ -301,7 +301,7 @@ static void callback_selectpalette(menu_t *caller_menu) {
     } else {
         for (int i = 2; i < numpalettes; ++i){ //first 2 entries are "." and ".." so we skip those.
             menu_entry = new_menu_entry(0);
-            menu_entry_set_text(menu_entry, palettelist[i]->d_name);
+            menu_entry_set_text_no_ext(menu_entry, palettelist[i]->d_name);
             menu_add_entry(menu, menu_entry);
             menu_entry->callback = callback_selectedpalette;
         }
@@ -344,8 +344,8 @@ static void callback_selectedpalette(menu_t *caller_menu) {
         }
     }
     if (j == 12){ // all 12 palette values were successfully loaded
-        set_menu_palette(values[0], values[3]);
-        printf("menu palette: %x : %x\n", values[0], values[3]);
+        set_menu_palette(values[0], values[1], values[2], values[3]);
+        printf("palette: %x - %x - %x - %x\n", values[0], values[1], values[2], values[3]);
         int m = 0;
         for (int i = 0; i < 3; ++i) {
             for (int k = 0; k < 4; ++k) {

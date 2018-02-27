@@ -260,16 +260,6 @@ void putpixel(SDL_Surface *surface, int x, int y, uint32_t pixel)
             break;
     }
 }
-
-void putpixel_b(SDL_Surface *surface, int x, int y, uint32_t pixel)
-{
-    SDL_Rect rect;
-    rect.x = x;
-    rect.y = y;
-    rect.w = 1;
-    rect.h = 1;
-    SDL_FillRect(surface, &rect, pixel);
-}
  
 //----------------------------------------------------------------------------------------
 // CALL THIS FUNCTION LIKE SO TO SWAP BLACK->WHITE
@@ -283,9 +273,11 @@ void putpixel_b(SDL_Surface *surface, int x, int y, uint32_t pixel)
 // uint32_t repl_col_white = SDL_MapRGB(my_surface->format, white_r, white_g, white_b);
 // convert_bw_surface_colors(my_surface, repl_col_black, repl_col_white);
 //----------------------------------------------------------------------------------------
-void convert_bw_surface_colors(SDL_Surface *surface, SDL_Surface *surface2, const uint32_t repl_col_black, const uint32_t repl_col_white)
+void convert_bw_surface_colors(SDL_Surface *surface, SDL_Surface *surface2, const uint32_t repl_col_black, const uint32_t repl_col_dark, const uint32_t repl_col_light, const uint32_t repl_col_white)
 {
-    const uint32_t col_black = SDL_MapRGB(surface->format, 0, 0, 0);
+    const uint32_t col_black = SDL_MapRGB(surface->format, 0x40, 0x40, 0x40);
+    const uint32_t col_dark = SDL_MapRGB(surface->format, 0x80, 0x80, 0x80);
+    const uint32_t col_light = SDL_MapRGB(surface->format, 0xC0, 0xC0, 0xC0);
     const uint32_t col_white = SDL_MapRGB(surface->format, 0xff, 0xff, 0xff);
  
     SDL_LockSurface(surface);
@@ -299,12 +291,16 @@ void convert_bw_surface_colors(SDL_Surface *surface, SDL_Surface *surface2, cons
             const uint32_t pix = getpixel(surface, x, y);
             uint32_t new_pix = pix;
  
-            if (pix == col_black)
+            if (pix <= col_black)
                 new_pix = repl_col_black;
-            else if (pix == col_white)
+            else if (pix <= col_dark)
+                new_pix = repl_col_dark;
+            else if (pix <= col_light)
+                new_pix = repl_col_light;
+            else if (pix <= col_white)
                 new_pix = repl_col_white;
  
-            putpixel_b(surface2, x, y, new_pix);
+            putpixel(surface2, x, y, new_pix);
         }
     }
  

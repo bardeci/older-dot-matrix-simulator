@@ -107,7 +107,6 @@ void SdlBlitter::setBufferDimensions(const unsigned int width, const unsigned in
 }
 
 void SdlBlitter::setScreenRes() {
-	printf("setting appropiate screen res...\n");
 	FILE* aspect_ratio_file = fopen("/sys/devices/platform/jz-lcd.0/keep_aspect_ratio", "w");
 
 	switch(scaler) {
@@ -306,7 +305,9 @@ void SdlBlitter::scaleMenu() {
 
 	if (!screen || !menuscreen)
 		return;
-	
+
+	convert_bw_surface_colors(menuscreen, menuscreencolored, menupalblack, menupalwhite);
+
 	switch(scaler) {
 		case 1:		/* Ayla's 1.5x scaler */
 			SDL_LockSurface(screen);

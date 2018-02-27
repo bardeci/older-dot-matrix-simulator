@@ -306,7 +306,7 @@ void SdlBlitter::scaleMenu() {
 	if (!screen || !menuscreen)
 		return;
 
-	convert_bw_surface_colors(menuscreen, menuscreencolored, menupalblack, menupalwhite);
+	convert_bw_surface_colors(menuscreen, menuscreencolored, menupalblack, menupaldark, menupallight, menupalwhite);
 
 	switch(scaler) {
 		case 1:		/* Ayla's 1.5x scaler */

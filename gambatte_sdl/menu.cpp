@@ -43,7 +43,7 @@ int init_menu() {
     SDL_Surface *font_bitmap_surface = NULL;
     SDL_RWops *RWops;
     
-	RWops = SDL_RWFromMem(sfont_gameboy_black, 940);
+	RWops = SDL_RWFromMem(sfont_gameboy_black, 1118);
     font_bitmap_surface = IMG_LoadPNG_RW(RWops);
     SDL_FreeRW(RWops);
     if (!font_bitmap_surface) {
@@ -88,6 +88,7 @@ void main_menu(gambatte::GB *gambatte, BlitterWrapper *blitter) {
 
     //blitter_p->force320x240(); /* force the menu to be at 320x240 screen resolution */
     SDL_EnableKeyRepeat(250, 83);
+    init_menusurfaces();
     init_menu();
 
     menu_t *menu;
@@ -143,6 +144,7 @@ void main_menu(gambatte::GB *gambatte, BlitterWrapper *blitter) {
     
     delete_menu(menu);
 
+    free_menusurfaces();
     SDL_EnableKeyRepeat(0, 100);
     init_fps_font();
     //blitter_p->setScreenRes(); /* switch to selected resolution */
@@ -170,17 +172,6 @@ static void callback_loadstate(menu_t *caller_menu) {
 
 static void callback_restart(menu_t *caller_menu) {
     gambatte_p->reset();
-    caller_menu->quit = 1;
-}
-
-static void changepalette(menu_t *caller_menu) { // TEST FUNCTION
-    for (int i = 0; i < 3; ++i)
-    {
-        gambatte_p->setDmgPaletteColor(i, 0, 0x64960a);
-        gambatte_p->setDmgPaletteColor(i, 1, 0x1b7e3e);
-        gambatte_p->setDmgPaletteColor(i, 2, 0x084e3c);
-        gambatte_p->setDmgPaletteColor(i, 3, 0x003236);
-    }
     caller_menu->quit = 1;
 }
 
@@ -294,10 +285,6 @@ static void callback_selectpalette_back(menu_t *caller_menu);
 static int parse_ext(const struct dirent *dir);
 
 static void callback_selectpalette(menu_t *caller_menu) {
-    printf("opening palette menu...\n");
-
-    //sprintf(palettedir, "%s/.ohboy/palettes", getenv("HOME"));
-    //printf("palettedir: %s\n", palettedir);
 
     menu_t *menu;
     menu_entry_t *menu_entry;
@@ -309,13 +296,10 @@ static void callback_selectpalette(menu_t *caller_menu) {
     menu->back_callback = callback_selectpalette_back;
 
     numpalettes = scandir("/usr/local/home/.gambatte/palettes", &palettelist, parse_ext, alphasort);
-    printf("numpalettes = %i\n", numpalettes - 2);
     if (numpalettes <= 0) {
-        printf("scandir failed. numpalettes = %i\n", numpalettes);
+        printf("scandir for ./gambatte/palettes/ failed.");
     } else {
-        printf("scandir success. numpalettes = %i\n", numpalettes - 2);
-        for (int i = 2; i < numpalettes; ++i){
-            printf("%s\n", palettelist[i]->d_name);
+        for (int i = 2; i < numpalettes; ++i){ //first 2 entries are "." and ".." so we skip those.
             menu_entry = new_menu_entry(0);
             menu_entry_set_text(menu_entry, palettelist[i]->d_name);
             menu_add_entry(menu, menu_entry);
@@ -348,21 +332,20 @@ static int parse_ext(const struct dirent *dir) {
 }
 
 static void callback_selectedpalette(menu_t *caller_menu) {
-    printf("name: %s\n",palettelist[caller_menu->selected_entry + 2]->d_name);
     char fullfilepath[64];
     Uint32 values[12];
-    sprintf(fullfilepath, "/usr/local/home/.gambatte/palettes/%s",palettelist[caller_menu->selected_entry + 2]->d_name);
-    printf("%s\n", fullfilepath);
+    sprintf(fullfilepath, "/usr/local/home/.gambatte/palettes/%s",palettelist[caller_menu->selected_entry + 2]->d_name); // remember we previously skipped 2 entries, so we have to do "+ 2" here.
     FILE * fpal;
     fpal = fopen(fullfilepath, "r");
     int j = 0;
     for (int i = 0; i < 20; ++i) {
         if(fscanf(fpal, "%x", &values[j]) == 1){
-            printf("val%i: %#08x \n", j, values[j]);
             j++;
         }
     }
-    if (j == 12){ // palette values were successfully loaded
+    if (j == 12){ // all 12 palette values were successfully loaded
+        set_menu_palette(values[0], values[3]);
+        printf("menu palette: %x : %x\n", values[0], values[3]);
         int m = 0;
         for (int i = 0; i < 3; ++i) {
             for (int k = 0; k < 4; ++k) {
@@ -370,6 +353,9 @@ static void callback_selectedpalette(menu_t *caller_menu) {
                 m++;
             }
         }
+    } else {
+        printf("error reading: %s:\n",fullfilepath);
+        printf("bad file format or file does not exist.\n");
     }
     caller_menu->quit = 1;
 }

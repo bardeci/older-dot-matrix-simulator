@@ -38,6 +38,9 @@ struct Menu_t {
 };
 
 extern SDL_Surface *menuscreen;
+extern SDL_Surface *menuscreencolored;
+extern uint32_t menupalwhite, menupalblack;
+
 
 void libmenu_set_screen(SDL_Surface *set_screen);
 void libmenu_set_font(SFont_Font *set_font);
@@ -53,6 +56,9 @@ void delete_menu_entry(menu_entry_t *entry);
 void menu_entry_set_text(menu_entry_t *entry, const char *text);
 void menu_entry_add_entry(menu_entry_t *entry, const char* text);
 void callback_menu_quit(menu_t *menu);
+void set_menu_palette(uint32_t valwhite, uint32_t valblack);
+void init_menusurfaces();
+void free_menusurfaces();
 
 
 #ifdef __cplusplus

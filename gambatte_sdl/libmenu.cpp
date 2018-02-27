@@ -25,6 +25,8 @@ static SDL_Surface *screen = NULL;
 static SFont_Font* font = NULL;
 
 SDL_Surface *menuscreen;
+SDL_Surface *menuscreencolored;
+uint32_t menupalwhite = 0xFFFFFF, menupalblack = 0x000000;
 
 void libmenu_set_screen(SDL_Surface *set_screen) {
 	screen = set_screen;
@@ -139,7 +141,7 @@ static void display_menu(SDL_Surface *surface, menu_t *menu) {
     int posend = menu->n_entries;
     int uparrow = 0;
     int downarrow = 0;
-    if(menu->n_entries > linelimit){ // scroll looping
+    if(menu->n_entries > linelimit){ // menu scrolling
     	if(menu->selected_entry <= 6){
     		posbegin = 0;
     		posend = posbegin + linelimit;
@@ -285,6 +287,21 @@ void callback_menu_quit(menu_t *caller_menu) {
 	caller_menu->quit = 1;
 }
 
+void set_menu_palette(uint32_t valwhite, uint32_t valblack) {
+		menupalwhite = valwhite;
+		menupalblack = valblack;
+}
+
+void init_menusurfaces(){
+	menuscreen = SDL_CreateRGBSurface(SDL_SWSURFACE, 160, 144, 16, 0, 0, 0, 0);
+	menuscreencolored = SDL_CreateRGBSurface(SDL_SWSURFACE, 160, 144, 32, 0, 0, 0, 0);
+}
+
+void free_menusurfaces(){
+	SDL_FreeSurface(menuscreen);
+	SDL_FreeSurface(menuscreencolored);
+}
+
 static void invert_rect(SDL_Surface* surface, SDL_Rect *rect) {
 	/* FIXME: with 32 bit color modes, alpha will be inverted */
 	int x, y;
@@ -323,15 +340,9 @@ static void invert_rect(SDL_Surface* surface, SDL_Rect *rect) {
 }
 
 static void redraw(menu_t *menu) {
-	menuscreen = SDL_CreateRGBSurface(SDL_SWSURFACE, 160, 144, 16, 0, 0, 0, 0);
-	clear_surface(menuscreen, 0xFFFFFFFF);
+	clear_surface(menuscreen, 0xFFFFFF);
 	display_menu(menuscreen, menu);
-	//SDL_Rect dst;
-	//dst.x = (screen->w - menuscreen->w) / 2;
-	//dst.y = (screen->h - menuscreen->h) / 2;
-	//dst.w = menuscreen->w;
-	//dst.h = menuscreen->h;
-	//SDL_BlitSurface(menuscreen, NULL, screen, &dst);
+
 	blitter_p->scaleMenu();
 	SDL_Flip(screen);
 }

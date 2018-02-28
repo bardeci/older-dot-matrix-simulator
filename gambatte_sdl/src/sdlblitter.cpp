@@ -55,7 +55,7 @@ void init_ghostframes() {
 void SdlBlitter::setBufferDimensions(const unsigned int width, const unsigned int height) {
 	//surface = screen = SDL_SetVideoMode(width * scale, height * scale, SDL_GetVideoInfo()->vfmt->BitsPerPixel == 16 ? 16 : 32, screen ? screen->flags : startFlags);
 	FILE* aspect_ratio_file = fopen("/sys/devices/platform/jz-lcd.0/keep_aspect_ratio", "w");
-	switch(scaler) {
+	switch(selectedscaler) {
 		case 0:		/* no scaler */
 		case 1:		/* Ayla's 1.5x scaler */
 		case 2:		/* Ayla's fullscreen scaler */
@@ -109,7 +109,7 @@ void SdlBlitter::setBufferDimensions(const unsigned int width, const unsigned in
 void SdlBlitter::setScreenRes() {
 	FILE* aspect_ratio_file = fopen("/sys/devices/platform/jz-lcd.0/keep_aspect_ratio", "w");
 
-	switch(scaler) {
+	switch(selectedscaler) {
 		case 0:		/* no scaler */
 		case 1:		/* Ayla's 1.5x scaler */
 		case 2:		/* Ayla's fullscreen scaler */
@@ -224,7 +224,15 @@ void SdlBlitter::draw() {
 	int ghosting = 1; // WIP - TODO: Make a menu option for turning ghosting on/off.
 	
 	if(ghosting == 0){
-		switch(scaler) {
+		switch(selectedscaler) {
+			case 0:		/* no scaler */
+				SDL_Rect dst;
+				dst.x = (screen->w - surface->w) / 2;
+				dst.y = ((screen->h - surface->h) / 2)-1;
+				dst.w = surface->w;
+				dst.h = surface->h;
+				SDL_BlitSurface(surface, NULL, screen, &dst);
+				break;
 			case 1:		/* Ayla's 1.5x scaler */
 				SDL_LockSurface(screen);
 				SDL_LockSurface(surface);
@@ -240,23 +248,30 @@ void SdlBlitter::draw() {
 				SDL_UnlockSurface(surface);
 				SDL_UnlockSurface(screen);
 				break;
-			case 0:		/* no scaler */
 			case 3:		/* Hardware 1.5x */
 			case 4:		/* Hardware Aspect */
 			case 5:		/* Hardware Fullscreen */
 			default:
-				SDL_Rect dst;
-				dst.x = (screen->w - surface->w) / 2;
-				dst.y = (screen->h - surface->h) / 2;
-				dst.w = surface->w;
-				dst.h = surface->h;
-				SDL_BlitSurface(surface, NULL, screen, &dst);
+				SDL_Rect dst2;
+				dst2.x = (screen->w - surface->w) / 2;
+				dst2.y = (screen->h - surface->h) / 2;
+				dst2.w = surface->w;
+				dst2.h = surface->h;
+				SDL_BlitSurface(surface, NULL, screen, &dst2);
 				break;
 		}
 	} else if(ghosting == 1){
 		blend_frames(surface);
 		store_lastframe(surface);
-		switch(scaler) {
+		switch(selectedscaler) {
+			case 0:		/* no scaler */
+				SDL_Rect dst;
+				dst.x = (screen->w - currframe->w) / 2;
+				dst.y = ((screen->h - currframe->h) / 2)-1;
+				dst.w = currframe->w;
+				dst.h = currframe->h;
+				SDL_BlitSurface(currframe, NULL, screen, &dst);
+				break;
 			case 1:		/* Ayla's 1.5x scaler */
 				SDL_LockSurface(screen);
 				SDL_LockSurface(currframe);
@@ -272,17 +287,16 @@ void SdlBlitter::draw() {
 				SDL_UnlockSurface(currframe);
 				SDL_UnlockSurface(screen);
 				break;
-			case 0:		/* no scaler */
 			case 3:		/* Hardware 1.5x */
 			case 4:		/* Hardware Aspect */
 			case 5:		/* Hardware Fullscreen */
 			default:
-				SDL_Rect dst;
-				dst.x = (screen->w - currframe->w) / 2;
-				dst.y = (screen->h - currframe->h) / 2;
-				dst.w = currframe->w;
-				dst.h = currframe->h;
-				SDL_BlitSurface(currframe, NULL, screen, &dst);
+				SDL_Rect dst2;
+				dst2.x = (screen->w - currframe->w) / 2;
+				dst2.y = (screen->h - currframe->h) / 2;
+				dst2.w = currframe->w;
+				dst2.h = currframe->h;
+				SDL_BlitSurface(currframe, NULL, screen, &dst2);
 				break;
 		}
 	}
@@ -308,7 +322,15 @@ void SdlBlitter::scaleMenu() {
 
 	convert_bw_surface_colors(menuscreen, menuscreencolored, menupalblack, menupaldark, menupallight, menupalwhite);
 
-	switch(scaler) {
+	switch(selectedscaler) {
+		case 0:		/* no scaler */
+			SDL_Rect dst;
+			dst.x = (screen->w - menuscreen->w) / 2;
+			dst.y = ((screen->h - menuscreen->h) / 2)-1;
+			dst.w = menuscreen->w;
+			dst.h = menuscreen->h;
+			SDL_BlitSurface(menuscreen, NULL, screen, &dst);
+			break;
 		case 1:		/* Ayla's 1.5x scaler */
 			SDL_LockSurface(screen);
 			SDL_LockSurface(menuscreen);
@@ -324,17 +346,16 @@ void SdlBlitter::scaleMenu() {
 			SDL_UnlockSurface(menuscreen);
 			SDL_UnlockSurface(screen);
 			break;
-		case 0:		/* no scaler */
 		case 3:		/* Hardware 1.5x */
 		case 4:		/* Hardware Aspect */
 		case 5:		/* Hardware Fullscreen */
 		default:
-			SDL_Rect dst;
-			dst.x = (screen->w - menuscreen->w) / 2;
-			dst.y = (screen->h - menuscreen->h) / 2;
-			dst.w = menuscreen->w;
-			dst.h = menuscreen->h;
-			SDL_BlitSurface(menuscreen, NULL, screen, &dst);
+			SDL_Rect dst2;
+			dst2.x = (screen->w - menuscreen->w) / 2;
+			dst2.y = (screen->h - menuscreen->h) / 2;
+			dst2.w = menuscreen->w;
+			dst2.h = menuscreen->h;
+			SDL_BlitSurface(menuscreen, NULL, screen, &dst2);
 			break;
 	}
 }

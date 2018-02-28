@@ -8,6 +8,7 @@
 #include <string.h>
 #include <assert.h>
 #include <SDL/SDL.h>
+#include <SDL/SDL_image.h>
 
 #include "libmenu.h"
 #include "SFont.h"
@@ -20,13 +21,18 @@ static void invert_rect(SDL_Surface* surface, SDL_Rect *rect);
 static void put_pixel(SDL_Surface *surface, int x, int y, Uint32 pixel);
 static Uint32 get_pixel(SDL_Surface *surface, int x, int y);
 
+void load_border(const char* borderfilename);
+
 static int quit_menu;
 static SDL_Surface *screen = NULL;
 static SFont_Font* font = NULL;
 
 SDL_Surface *menuscreen;
 SDL_Surface *menuscreencolored;
-uint32_t menupalblack = 0x000000, menupaldark = 0x505050, menupallight = 0xA0A0A0, menupalwhite = 0xFFFFFF;
+SDL_Surface *borderimg;
+int selectedscaler = 0;
+uint32_t menupalblack = 0x000000, menupaldark = 0x505450, menupallight = 0xA8A8A8, menupalwhite = 0xF8FCF8;
+char *dmgbordername = "NONE";
 
 void libmenu_set_screen(SDL_Surface *set_screen) {
 	screen = set_screen;
@@ -117,12 +123,14 @@ int menu_main(menu_t *menu) {
 	quit_menu = 0;
 	/* doing this twice is just an ugly hack to get round an 
 	 * opendingux pre-release hardware surfaces bug */
+
 	clear_surface(screen, 0);
 	redraw(menu);
 	//SDL_Flip(screen);
 	clear_surface(screen, 0);
-	redraw(menu); // redraw function flips the screen. delete and restore sdl_flip if problematic
+	redraw(menu); // redraw function also flips the screen. delete and restore sdl_flip if problematic
 	//SDL_Flip(screen);
+	
 	return menu->selected_entry;
 }
 
@@ -170,9 +178,9 @@ static void display_menu(SDL_Surface *surface, menu_t *menu) {
     const int highlight_margin = 0;
     paint_titlebar();
     line ++;
-    SFont_WriteCenter(surface, font, line * font_height, menu->header);
+    SFont_WriteCenter(surface, font, (line * font_height)-5, menu->header);
     line ++;
-    SFont_WriteCenter(surface, font, line * font_height, menu->title);
+    SFont_WriteCenter(surface, font, (line * font_height)-3, menu->title);
     if(uparrow == 1){
     	line ++;
     	SFont_WriteCenter(surface, font, line * font_height, "{"); // up arrow
@@ -316,13 +324,216 @@ void free_menusurfaces(){
 
 void paint_titlebar(){
 	SDL_Rect rect;
-    rect.x = 0;
-    rect.y = 8;
+	rect.x = 0;
+    rect.y = 0;
     rect.w = 160;
-    rect.h = 16;
+    rect.h = 24;
+    SDL_FillRect(menuscreen, &rect, 0x505050);
+    rect.x = 1;
+    rect.y = 1;
+    rect.w = 158;
+    rect.h = 22;
     SDL_FillRect(menuscreen, &rect, 0xA0A0A0);
 }
 
+void load_border(const char* borderfilename){
+	SDL_FreeSurface(borderimg);
+	char fullimgpath[64];
+    sprintf(fullimgpath, "/usr/local/home/.gambatte/borders/%s",borderfilename);
+    borderimg = IMG_Load(fullimgpath);
+    if(!borderimg){
+    	clear_surface(screen, 0);
+    	blitter_p->scaleMenu();
+		SDL_Flip(screen); // ugly workaround for double-buffer
+		clear_surface(screen, 0);
+		clear_surface(menuscreen, 0xFFFFFF);
+		blitter_p->scaleMenu();
+    	if(borderfilename != "NONE"){
+    		printf("error loading %s\n", fullimgpath);
+    	}
+    }
+
+}
+
+void paint_border(SDL_Surface *surface){
+	SDL_Rect rect;
+	switch(selectedscaler) {
+		case 0:		/* no scaler */
+			rect.x = 0;
+    		rect.y = 0;
+    		rect.w = 320;
+    		rect.h = 240;
+    		break;
+		case 1:		/* Ayla's 1.5x scaler */
+    		rect.x = 0;
+    		rect.y = 240;
+    		rect.w = 320;
+    		rect.h = 240;
+    		break;
+		case 2:		/* Ayla's fullscreen scaler */
+    		rect.x = 0;
+    		rect.y = 0;
+    		rect.w = 0;
+    		rect.h = 0;
+			break;
+		case 3:		/* Hardware 1.5x */
+			rect.x = 56;
+    		rect.y = 39;
+    		rect.w = 208;
+    		rect.h = 160;
+			break;
+		case 4:		/* Hardware Aspect */
+			rect.x = 64;
+    		rect.y = 47;
+    		rect.w = 192;
+    		rect.h = 144;
+			break;
+		case 5:		/* Hardware Fullscreen */
+			rect.x = 0;
+    		rect.y = 0;
+    		rect.w = 0;
+    		rect.h = 0;
+			break;
+		default:
+			rect.x = 0;
+    		rect.y = 0;
+    		rect.w = 320;
+    		rect.h = 240;
+			break;
+	}
+	SDL_BlitSurface(borderimg, &rect, surface, NULL);
+}
+
+uint32_t convert_hexcolor(SDL_Surface *surface, const uint32_t color){
+	uint8_t colorr = ((color >> 16) & 0xFF);
+	uint8_t colorg = ((color >> 8) & 0xFF);
+	uint8_t colorb = ((color) & 0xFF);
+	uint32_t result = SDL_MapRGB(surface->format, colorr, colorg, colorb);
+	return result;
+}
+
+/************************************COLORIZE MENU*****************************************/
+
+uint32_t getpixel(SDL_Surface *surface, int x, int y)
+{
+    int bpp = surface->format->BytesPerPixel;
+    /* Here p is the address to the pixel we want to retrieve */
+    uint8_t *p = (uint8_t *)surface->pixels + y * surface->pitch + x * bpp;
+ 
+    switch (bpp)
+    {
+        case 1:
+            return *p;
+            break;
+ 
+        case 2:
+            return *(uint16_t *)p;
+            break;
+ 
+        case 3:
+            if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
+                return p[0] << 16 | p[1] << 8 | p[2];
+            else
+                return p[0] | p[1] << 8 | p[2] << 16;
+            break;
+ 
+        case 4:
+            return *(uint32_t *)p;
+            break;
+ 
+        default:
+            return 0;       /* shouldn't happen, but avoids warnings */
+    }
+}
+ 
+void putpixel(SDL_Surface *surface, int x, int y, uint32_t pixel)
+{
+    int bpp = surface->format->BytesPerPixel;
+    /* Here p is the address to the pixel we want to set */
+    uint8_t *p = (uint8_t *)surface->pixels + y * surface->pitch + x * bpp;
+ 
+    switch (bpp)
+    {
+        case 1:
+            *p = pixel;
+            break;
+ 
+        case 2:
+            *(uint16_t *)p = pixel;
+            break;
+ 
+        case 3:
+            if (SDL_BYTEORDER == SDL_BIG_ENDIAN) {
+                p[0] = (pixel >> 16) & 0xff;
+                p[1] = (pixel >> 8) & 0xff;
+                p[2] = pixel & 0xff;
+            } else {
+                p[0] = pixel & 0xff;
+                p[1] = (pixel >> 8) & 0xff;
+                p[2] = (pixel >> 16) & 0xff;
+            }
+            break;
+ 
+        case 4:
+            *(uint32_t *)p = pixel;
+            break;
+    }
+}
+ 
+//----------------------------------------------------------------------------------------
+// CALL THIS FUNCTION LIKE SO TO SWAP BLACK->WHITE
+// uint8_t repl_black_r = 0xff,
+//         repl_black_g = 0xff,
+//         repl_black_b = 0xff;
+// uint8_t repl_white_r = 0,
+//         repl_white_g = 0,
+//         repl_white_b = 0;
+// uint32_t repl_col_black = SDL_MapRGB(my_surface->format, black_r, black_g, black_b);
+// uint32_t repl_col_white = SDL_MapRGB(my_surface->format, white_r, white_g, white_b);
+// convert_bw_surface_colors(my_surface, repl_col_black, repl_col_white);
+//----------------------------------------------------------------------------------------
+void convert_bw_surface_colors(SDL_Surface *surface, SDL_Surface *surface2, const uint32_t repl_col_black, const uint32_t repl_col_dark, const uint32_t repl_col_light, const uint32_t repl_col_white)
+{
+    const uint32_t col_black = SDL_MapRGB(surface->format, 0x40, 0x40, 0x40);
+    const uint32_t col_dark = SDL_MapRGB(surface->format, 0x80, 0x80, 0x80);
+    const uint32_t col_light = SDL_MapRGB(surface->format, 0xC0, 0xC0, 0xC0);
+    const uint32_t col_white = SDL_MapRGB(surface->format, 0xff, 0xff, 0xff);
+ 
+    SDL_LockSurface(surface);
+    SDL_LockSurface(surface2);
+ 
+    int x,y;
+    for (y=0; y < surface->h; ++y)
+    {
+        for (x=0; x < surface->w; ++x)
+        {
+            const uint32_t pix = getpixel(surface, x, y);
+            uint32_t new_pix = pix;
+ 
+            if (pix <= col_black)
+                new_pix = repl_col_black;
+            else if (pix <= col_dark)
+                new_pix = repl_col_dark;
+            else if (pix <= col_light)
+                new_pix = repl_col_light;
+            else if (pix <= col_white)
+                new_pix = repl_col_white;
+ 
+            putpixel(surface2, x, y, new_pix);
+        }
+    }
+ 
+    SDL_UnlockSurface(surface);
+    SDL_UnlockSurface(surface2);
+
+    SDL_Rect rect;
+    rect.x = 0;
+    rect.y = 0;
+    rect.w = 160;
+    rect.h = 144;
+    SDL_BlitSurface(surface2, NULL, surface, &rect);
+}
+/********************************END OF COLORIZE MENU***********************************/
 
 static void invert_rect(SDL_Surface* surface, SDL_Rect *rect) {
 	/* FIXME: with 32 bit color modes, alpha will be inverted */
@@ -363,8 +574,12 @@ static void invert_rect(SDL_Surface* surface, SDL_Rect *rect) {
 
 static void redraw(menu_t *menu) {
 	clear_surface(menuscreen, 0xFFFFFF);
+	if(dmgbordername != "NONE"){
+		clear_surface(screen, convert_hexcolor(screen, menupalwhite));
+		paint_border(screen);
+	}
+		
 	display_menu(menuscreen, menu);
-
 	blitter_p->scaleMenu();
 	SDL_Flip(screen);
 }

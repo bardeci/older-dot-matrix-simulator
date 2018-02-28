@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <string>
 #include <assert.h>
 #include <SDL/SDL.h>
 #include <SDL/SDL_image.h>
@@ -21,7 +22,7 @@ static void invert_rect(SDL_Surface* surface, SDL_Rect *rect);
 static void put_pixel(SDL_Surface *surface, int x, int y, Uint32 pixel);
 static Uint32 get_pixel(SDL_Surface *surface, int x, int y);
 
-void load_border(const char* borderfilename);
+void load_border(std::string borderfilename);
 
 static int quit_menu;
 static SDL_Surface *screen = NULL;
@@ -32,7 +33,7 @@ SDL_Surface *menuscreencolored;
 SDL_Surface *borderimg;
 int selectedscaler = 0;
 uint32_t menupalblack = 0x000000, menupaldark = 0x505450, menupallight = 0xA8A8A8, menupalwhite = 0xF8FCF8;
-char *dmgbordername = "NONE";
+std::string dmgbordername = "NONE", palname = "No palette";
 
 void libmenu_set_screen(SDL_Surface *set_screen) {
 	screen = set_screen;
@@ -322,6 +323,18 @@ void free_menusurfaces(){
 	SDL_FreeSurface(menuscreencolored);
 }
 
+int currentEntryInList(menu_t *menu, std::string text){
+    int count = menu->n_entries;
+    int i;
+    for (i = 0; i < count; ++i)
+    {
+    	if(strcmp(text.c_str(), menu->entries[i]->text) == 0){
+    		return i;
+    	}
+    }
+    return 0;
+}
+
 void paint_titlebar(){
 	/*SDL_Rect rect;
 	rect.x = 0;
@@ -347,11 +360,11 @@ void paint_titlebar(){
     SDL_FillRect(menuscreen, &rect, 0xA0A0A0);
 }
 
-void load_border(const char* borderfilename){
+void load_border(std::string borderfilename){
 	SDL_FreeSurface(borderimg);
-	char fullimgpath[64];
-    sprintf(fullimgpath, "/usr/local/home/.gambatte/borders/%s",borderfilename);
-    borderimg = IMG_Load(fullimgpath);
+	std::string fullimgpath;
+    fullimgpath = ("/usr/local/home/.gambatte/borders/" + borderfilename);
+    borderimg = IMG_Load(fullimgpath.c_str());
     if(!borderimg){
     	clear_surface(screen, 0);
     	blitter_p->scaleMenu();
@@ -360,7 +373,7 @@ void load_border(const char* borderfilename){
 		clear_surface(menuscreen, 0xFFFFFF);
 		blitter_p->scaleMenu();
     	if(borderfilename != "NONE"){
-    		printf("error loading %s\n", fullimgpath);
+    		printf("error loading %s\n", fullimgpath.c_str());
     	}
     }
 

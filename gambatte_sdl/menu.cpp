@@ -208,7 +208,7 @@ static void callback_selectedstate(menu_t *caller_menu) {
 /* ==================== OPTIONS MENU ================================ */
 #define SHOW_FPS 0
 #define SCALER 1
-#define BACK 2
+#define BACK 4
 
 static void callback_options_back(menu_t *caller_menu);
 static int is_showing_fps = 0;
@@ -223,14 +223,14 @@ static void callback_options(menu_t *caller_menu) {
     menu_set_title(menu, "Options");
 	menu->back_callback = callback_options_back;
 	
-    menu_entry = new_menu_entry(1);
+    menu_entry = new_menu_entry(1); //0
     menu_entry_set_text(menu_entry, "Show FPS");
     menu_add_entry(menu, menu_entry);
     menu_entry_add_entry(menu_entry, "Off");
     menu_entry_add_entry(menu_entry, "On");    
     menu_entry->selected_entry = is_showing_fps;
 
-    menu_entry = new_menu_entry(1);
+    menu_entry = new_menu_entry(1); //1
     menu_entry_set_text(menu_entry, "Scaler");
     menu_add_entry(menu, menu_entry);
     menu_entry_add_entry(menu_entry, "None");
@@ -241,18 +241,18 @@ static void callback_options(menu_t *caller_menu) {
     menu_entry_add_entry(menu_entry, "Hw Full");
     menu_entry->selected_entry = selectedscaler;
 
-    menu_entry = new_menu_entry(0);
+    menu_entry = new_menu_entry(0); //2
     menu_entry_set_text(menu_entry, "DMG Palette"); // TEST FUNCTION
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_dmgpalette;
 
-    menu_entry = new_menu_entry(0);
+    menu_entry = new_menu_entry(0); //3
     menu_entry_set_text(menu_entry, "DMG Border"); // TEST FUNCTION
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_dmgborderimage;
 
 
-    menu_entry = new_menu_entry(0);
+    menu_entry = new_menu_entry(0); //4
     menu_entry_set_text(menu_entry, "Back");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_options_back;
@@ -265,13 +265,13 @@ static void callback_options(menu_t *caller_menu) {
 static void callback_options_back(menu_t *caller_menu) {
 	is_showing_fps = caller_menu->entries[SHOW_FPS]->selected_entry;
     selectedscaler = caller_menu->entries[SCALER]->selected_entry;
-	blitter_p->setScaler(caller_menu->entries[SCALER]->selected_entry);
     blitter_p->setScreenRes(); /* switch to selected resolution */
     caller_menu->quit = 1;
 }
 
 #undef SHOW_FPS
-#undef RETURN
+#undef SCALER
+#undef BACK
 
 void show_fps(SDL_Surface *surface, int fps) {
 	char buffer[64];
@@ -317,6 +317,8 @@ static void callback_dmgpalette(menu_t *caller_menu) {
     menu_entry_set_text(menu_entry, "No palette");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_nopalette;
+
+    menu->selected_entry = currentEntryInList(menu, palname); 
     
     menu_main(menu);
     delete_menu(menu);
@@ -326,6 +328,13 @@ static void callback_dmgpalette(menu_t *caller_menu) {
     }
     free(palettelist);
 }
+
+/*static int currentPalette(menu_t *menu){
+    int i = menu->n_entries;
+    return i;
+    
+
+}*/
 
 static int parse_ext_pal(const struct dirent *dir) {
     if(!dir)
@@ -358,15 +367,16 @@ static void callback_nopalette(menu_t *caller_menu) {
         }
     }
     set_menu_palette(0xF8FCF8, 0xA8A8A8, 0x505450, 0x000000);
+    palname = "No palette";
     caller_menu->quit = 0;
 }
 
 static void callback_selectedpalette(menu_t *caller_menu) {
-    char fullfilepath[64];
     Uint32 values[12];
-    sprintf(fullfilepath, "/usr/local/home/.gambatte/palettes/%s",palettelist[caller_menu->selected_entry + 2]->d_name); // we previously skipped 2 entries, so we have to do "+ 2" here.
+    std::string fullfilepath = "/usr/local/home/.gambatte/palettes/";
+    fullfilepath += palettelist[caller_menu->selected_entry + 2]->d_name; // we previously skipped 2 entries, so we have to do "+ 2" here.
     FILE * fpal;
-    fpal = fopen(fullfilepath, "r");
+    fpal = fopen(fullfilepath.c_str(), "r");
     int j = 0;
     for (int i = 0; i < 20; ++i) { // i do 20 tries, but 12 is enough. TODO: Find a better way of parsing the palette values.
         if(fscanf(fpal, "%x", &values[j]) == 1){
@@ -375,7 +385,6 @@ static void callback_selectedpalette(menu_t *caller_menu) {
     }
     if (j == 12){ // all 12 palette values were successfully loaded
         set_menu_palette(values[0], values[1], values[2], values[3]);
-        printf("palette: %x - %x - %x - %x\n", values[0], values[1], values[2], values[3]);
         int m = 0;
         for (int i = 0; i < 3; ++i) {
             for (int k = 0; k < 4; ++k) {
@@ -384,9 +393,13 @@ static void callback_selectedpalette(menu_t *caller_menu) {
             }
         }
     } else {
-        printf("error reading: %s:\n",fullfilepath);
+        printf("error reading: %s:\n",fullfilepath.c_str());
         printf("bad file format or file does not exist.\n");
     }
+
+    palname = palettelist[caller_menu->selected_entry + 2]->d_name;
+    palname = palname.substr(0, palname.size() - 4);
+
     caller_menu->quit = 0;
 }
 
@@ -430,6 +443,8 @@ static void callback_dmgborderimage(menu_t *caller_menu) {
     menu_entry_set_text(menu_entry, "No border");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_nodmgborder;
+
+    menu->selected_entry = currentEntryInList(menu, dmgbordername); 
     
     menu_main(menu);
     delete_menu(menu);
@@ -462,11 +477,9 @@ static void callback_nodmgborder(menu_t *caller_menu) {
 }
 
 static void callback_selecteddmgborder(menu_t *caller_menu) {
-    char fullfilepath[64];
-    sprintf(fullfilepath, "/usr/local/home/.gambatte/borders/%s",dmgborderlist[caller_menu->selected_entry + 2]->d_name); // we previously skipped 2 entries, so we have to do "+ 2" here.
     dmgbordername = dmgborderlist[caller_menu->selected_entry + 2]->d_name;
-    load_border(dmgbordername);
-    printf("bordername: %s\n", dmgbordername);
+    dmgbordername = dmgbordername.substr(0, dmgbordername.size() - 4);
+    load_border(dmgbordername + ".png");
     caller_menu->quit = 0;
 }
 

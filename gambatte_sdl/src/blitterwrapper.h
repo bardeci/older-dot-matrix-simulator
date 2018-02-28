@@ -40,12 +40,9 @@ public:
 	void draw();
 	void present() { blitter.present(); }
 	void toggleFullScreen() { blitter.toggleFullScreen(); }
-	void setScale(const Uint8 scale) { blitter.setScale(scale); }
 	void setStartFull() { blitter.setStartFull(); }
 	void setYuv(const bool yuv) { blitter.setYuv(yuv); }
 	void setVideoFilter(unsigned n) { vsrci = n; }
-	void setScaler(const int scaler) { blitter.setScaler(scaler); }
-	int getScaler() { return blitter.getScaler(); }
 	void init();
 };
 

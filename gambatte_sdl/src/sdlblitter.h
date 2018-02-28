@@ -52,9 +52,6 @@ public:
 	void draw();
 	void present();
 	void toggleFullScreen();
-	void setScale(const Uint8 scale) { if (!screen) this->scale = scale; }
-	void setScaler(const int scaler) { this->scaler = scaler; }
-	int getScaler() { return this->scaler; }
 	void setStartFull() { startFlags |= SDL_FULLSCREEN; }
 	void setYuv(const bool yuv) { if (!screen) this->yuv = yuv; }
 // 	bool failed() const { return screen == NULL; }

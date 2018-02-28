@@ -541,7 +541,7 @@ bool GambatteSdl::init(int argc, char **argv) {
 		sampleRate = rateOption.getRate();
 		latency = latencyOption.getLatency();
 		periods = periodsOption.getPeriods();
-		blitter.setScale(scaleOption.getScale());
+		//blitter.setScale(scaleOption.getScale());
 		blitter.setYuv(yuvOption.useYuv());
 		blitter.setVideoFilter(vfOption.filterNumber());
 		resampler.reset(ResamplerInfo::get(resamplerOption.resamplerNumber()).create(2097152, sampleRate, inBuf.size() / 2));

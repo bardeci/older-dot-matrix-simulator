@@ -76,8 +76,8 @@ static void callback_selectstate(menu_t *caller_menu);
 static void callback_selectedstate(menu_t *caller_menu);
 static void callback_options(menu_t *caller_menu);
 static void callback_restart(menu_t *caller_menu);
-
-static void callback_selectpalette(menu_t *caller_menu); // TEST FUNCTION
+static void callback_dmgpalette(menu_t *caller_menu); // TEST FUNCTION
+static void callback_dmgborderimage(menu_t *caller_menu); // TEST FUNCTION
 
 static gambatte::GB *gambatte_p;
 BlitterWrapper *blitter_p;
@@ -126,9 +126,14 @@ void main_menu(gambatte::GB *gambatte, BlitterWrapper *blitter) {
     menu_entry->callback = callback_options;
 
     menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "Change Palette"); // TEST FUNCTION
+    menu_entry_set_text(menu_entry, "DMG Palette"); // TEST FUNCTION
     menu_add_entry(menu, menu_entry);
-    menu_entry->callback = callback_selectpalette;
+    menu_entry->callback = callback_dmgpalette;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "DMG Border Image"); // TEST FUNCTION
+    menu_add_entry(menu, menu_entry);
+    menu_entry->callback = callback_dmgborderimage;
 
 	menu_entry = new_menu_entry(0);
 	menu_entry_set_text(menu_entry, "Reset game");
@@ -244,7 +249,7 @@ static void callback_options(menu_t *caller_menu) {
     menu_entry_add_entry(menu_entry, "Hw 1.5x");
     menu_entry_add_entry(menu_entry, "Hw Aspect");
     menu_entry_add_entry(menu_entry, "Hw Full");
-    menu_entry->selected_entry = blitter_p->getScaler();
+    menu_entry->selected_entry = selectedscaler;
 
 
     menu_entry = new_menu_entry(0);
@@ -259,6 +264,7 @@ static void callback_options(menu_t *caller_menu) {
 
 static void callback_options_back(menu_t *caller_menu) {
 	is_showing_fps = caller_menu->entries[SHOW_FPS]->selected_entry;
+    selectedscaler = caller_menu->entries[SCALER]->selected_entry;
 	blitter_p->setScaler(caller_menu->entries[SCALER]->selected_entry);
     blitter_p->setScreenRes(); /* switch to selected resolution */
     caller_menu->quit = 1;
@@ -275,16 +281,17 @@ void show_fps(SDL_Surface *surface, int fps) {
 	}
 }
 
-/* ==================== SELECT PALETTE MENU =========================== */
+/* ==================== DMG PALETTE MENU =========================== */
 
 struct dirent **palettelist = NULL;
 int numpalettes;
 
+static void callback_nopalette(menu_t *caller_menu);
 static void callback_selectedpalette(menu_t *caller_menu);
-static void callback_selectpalette_back(menu_t *caller_menu);
-static int parse_ext(const struct dirent *dir);
+static void callback_dmgpalette_back(menu_t *caller_menu);
+static int parse_ext_pal(const struct dirent *dir);
 
-static void callback_selectpalette(menu_t *caller_menu) {
+static void callback_dmgpalette(menu_t *caller_menu) {
 
     menu_t *menu;
     menu_entry_t *menu_entry;
@@ -292,10 +299,10 @@ static void callback_selectpalette(menu_t *caller_menu) {
     menu = new_menu();
 
     menu_set_header(menu, "GCW-Gambatte (WIP)");
-    menu_set_title(menu, "Select Palette");
-    menu->back_callback = callback_selectpalette_back;
+    menu_set_title(menu, "DMG Palette");
+    menu->back_callback = callback_dmgpalette_back;
 
-    numpalettes = scandir("/usr/local/home/.gambatte/palettes", &palettelist, parse_ext, alphasort);
+    numpalettes = scandir("/usr/local/home/.gambatte/palettes", &palettelist, parse_ext_pal, alphasort);
     if (numpalettes <= 0) {
         printf("scandir for ./gambatte/palettes/ failed.");
     } else {
@@ -306,6 +313,10 @@ static void callback_selectpalette(menu_t *caller_menu) {
             menu_entry->callback = callback_selectedpalette;
         }
     }
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "No palette");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->callback = callback_nopalette;
     
     menu_main(menu);
     delete_menu(menu);
@@ -316,7 +327,7 @@ static void callback_selectpalette(menu_t *caller_menu) {
     free(palettelist);
 }
 
-static int parse_ext(const struct dirent *dir) {
+static int parse_ext_pal(const struct dirent *dir) {
     if(!dir)
         return 0;
 
@@ -331,14 +342,33 @@ static int parse_ext(const struct dirent *dir) {
     }
 }
 
+static void callback_nopalette(menu_t *caller_menu) {
+    Uint32 value;
+    for (int i = 0; i < 3; ++i) {
+        for (int k = 0; k < 4; ++k) {
+            if(k == 0)
+                value = 0xF8FCF8;
+            if(k == 1)
+                value = 0xA8A8A8;
+            if(k == 2)
+                value = 0x505450;
+            if(k == 3)
+                value = 0x000000;
+            gambatte_p->setDmgPaletteColor(i, k, value);
+        }
+    }
+    set_menu_palette(0xF8FCF8, 0xA8A8A8, 0x505450, 0x000000);
+    caller_menu->quit = 0;
+}
+
 static void callback_selectedpalette(menu_t *caller_menu) {
     char fullfilepath[64];
     Uint32 values[12];
-    sprintf(fullfilepath, "/usr/local/home/.gambatte/palettes/%s",palettelist[caller_menu->selected_entry + 2]->d_name); // remember we previously skipped 2 entries, so we have to do "+ 2" here.
+    sprintf(fullfilepath, "/usr/local/home/.gambatte/palettes/%s",palettelist[caller_menu->selected_entry + 2]->d_name); // we previously skipped 2 entries, so we have to do "+ 2" here.
     FILE * fpal;
     fpal = fopen(fullfilepath, "r");
     int j = 0;
-    for (int i = 0; i < 20; ++i) {
+    for (int i = 0; i < 20; ++i) { // i do 20 tries, but 12 is enough. TODO: Find a better way of parsing the palette values.
         if(fscanf(fpal, "%x", &values[j]) == 1){
             j++;
         }
@@ -357,10 +387,90 @@ static void callback_selectedpalette(menu_t *caller_menu) {
         printf("error reading: %s:\n",fullfilepath);
         printf("bad file format or file does not exist.\n");
     }
+    caller_menu->quit = 0;
+}
+
+static void callback_dmgpalette_back(menu_t *caller_menu) {
     caller_menu->quit = 1;
 }
 
-static void callback_selectpalette_back(menu_t *caller_menu) {
+/* ==================== DMG BORDER IMAGE MENU =========================== */
+
+struct dirent **dmgborderlist = NULL;
+int numdmgborders;
+
+static void callback_nodmgborder(menu_t *caller_menu);
+static void callback_selecteddmgborder(menu_t *caller_menu);
+static void callback_dmgborderimage_back(menu_t *caller_menu);
+static int parse_ext_png(const struct dirent *dir);
+
+static void callback_dmgborderimage(menu_t *caller_menu) {
+
+    menu_t *menu;
+    menu_entry_t *menu_entry;
+    (void) caller_menu;
+    menu = new_menu();
+
+    menu_set_header(menu, "GCW-Gambatte (WIP)");
+    menu_set_title(menu, "DMG Border Image");
+    menu->back_callback = callback_dmgborderimage_back;
+
+    numdmgborders = scandir("/usr/local/home/.gambatte/borders", &dmgborderlist, parse_ext_png, alphasort);
+    if (numdmgborders <= 0) {
+        printf("scandir for ./gambatte/borders/ failed.");
+    } else {
+        for (int i = 2; i < numdmgborders; ++i){ //first 2 entries are "." and ".." so we skip those.
+            menu_entry = new_menu_entry(0);
+            menu_entry_set_text_no_ext(menu_entry, dmgborderlist[i]->d_name);
+            menu_add_entry(menu, menu_entry);
+            menu_entry->callback = callback_selecteddmgborder;
+        }
+    }
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "No border");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->callback = callback_nodmgborder;
+    
+    menu_main(menu);
+    delete_menu(menu);
+
+    for (int i = 0; i < numdmgborders; ++i){
+        free(dmgborderlist[i]);
+    }
+    free(dmgborderlist);
+}
+
+static int parse_ext_png(const struct dirent *dir) {
+    if(!dir)
+        return 0;
+
+    if(dir->d_type == DT_REG) {
+        const char *ext = strrchr(dir->d_name,'.');
+        if((!ext) || (ext == dir->d_name)) {
+            return 0;
+        } else {
+            if(strcmp(ext, ".png") == 0)
+                return 1;
+        }
+    }
+}
+
+static void callback_nodmgborder(menu_t *caller_menu) {
+    dmgbordername = "NONE";
+    load_border(dmgbordername);
+    caller_menu->quit = 0;
+}
+
+static void callback_selecteddmgborder(menu_t *caller_menu) {
+    char fullfilepath[64];
+    sprintf(fullfilepath, "/usr/local/home/.gambatte/borders/%s",dmgborderlist[caller_menu->selected_entry + 2]->d_name); // we previously skipped 2 entries, so we have to do "+ 2" here.
+    dmgbordername = dmgborderlist[caller_menu->selected_entry + 2]->d_name;
+    load_border(dmgbordername);
+    printf("bordername: %s\n", dmgbordername);
+    caller_menu->quit = 0;
+}
+
+static void callback_dmgborderimage_back(menu_t *caller_menu) {
     caller_menu->quit = 1;
 }
 

@@ -13,6 +13,7 @@ extern "C" {
 
 
 #include <SDL/SDL.h>
+#include <string.h>
 #include "SFont.h"
 
 typedef struct Menu_t menu_t;
@@ -39,7 +40,9 @@ struct Menu_t {
 
 extern SDL_Surface *menuscreen;
 extern SDL_Surface *menuscreencolored;
+extern int selectedscaler;
 extern uint32_t menupalblack, menupaldark, menupallight, menupalwhite;
+extern char *dmgbordername;
 
 
 void libmenu_set_screen(SDL_Surface *set_screen);
@@ -61,6 +64,10 @@ void set_menu_palette(uint32_t valwhite, uint32_t vallight, uint32_t valdark, ui
 void init_menusurfaces();
 void free_menusurfaces();
 void paint_titlebar();
+void convert_bw_surface_colors(SDL_Surface *surface, SDL_Surface *surface2, const uint32_t repl_col_black, const uint32_t repl_col_dark, const uint32_t repl_col_light, const uint32_t repl_col_white);
+void load_border(const char* borderfilename);
+void paint_border(SDL_Surface *surface);
+uint32_t convert_hexcolor(SDL_Surface *surface, const uint32_t color);
 
 
 #ifdef __cplusplus

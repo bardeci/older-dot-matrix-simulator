@@ -177,10 +177,9 @@ static void display_menu(SDL_Surface *surface, menu_t *menu) {
     }
     const int highlight_margin = 0;
     paint_titlebar();
+    SFont_WriteCenter(surface, font, (line * font_height), menu->header);
     line ++;
-    SFont_WriteCenter(surface, font, (line * font_height)-5, menu->header);
-    line ++;
-    SFont_WriteCenter(surface, font, (line * font_height)-3, menu->title);
+    SFont_WriteCenter(surface, font, (line * font_height), menu->title);
     if(uparrow == 1){
     	line ++;
     	SFont_WriteCenter(surface, font, line * font_height, "{"); // up arrow
@@ -209,6 +208,7 @@ static void display_menu(SDL_Surface *surface, menu_t *menu) {
 	if(downarrow == 1){
     	SFont_WriteCenter(surface, font, line * font_height, "}"); // down arrow
     }
+    SFont_WriteCenter(surface, font, 17 * font_height, "B-Back      A-Accept"); // 17 = last line of screen (footer)
 }
 
 menu_t *new_menu() {
@@ -323,7 +323,7 @@ void free_menusurfaces(){
 }
 
 void paint_titlebar(){
-	SDL_Rect rect;
+	/*SDL_Rect rect;
 	rect.x = 0;
     rect.y = 0;
     rect.w = 160;
@@ -333,6 +333,17 @@ void paint_titlebar(){
     rect.y = 1;
     rect.w = 158;
     rect.h = 22;
+    SDL_FillRect(menuscreen, &rect, 0xA0A0A0);*/
+    SDL_Rect rect;
+    rect.x = 0;
+    rect.y = 0;
+    rect.w = 160;
+    rect.h = 16;
+    SDL_FillRect(menuscreen, &rect, 0xA0A0A0);
+    rect.x = 0;
+    rect.y = 136;
+    rect.w = 160;
+    rect.h = 8;
     SDL_FillRect(menuscreen, &rect, 0xA0A0A0);
 }
 

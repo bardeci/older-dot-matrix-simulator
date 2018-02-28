@@ -125,16 +125,6 @@ void main_menu(gambatte::GB *gambatte, BlitterWrapper *blitter) {
 	menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_options;
 
-    menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "DMG Palette"); // TEST FUNCTION
-    menu_add_entry(menu, menu_entry);
-    menu_entry->callback = callback_dmgpalette;
-
-    menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "DMG Border Image"); // TEST FUNCTION
-    menu_add_entry(menu, menu_entry);
-    menu_entry->callback = callback_dmgborderimage;
-
 	menu_entry = new_menu_entry(0);
 	menu_entry_set_text(menu_entry, "Reset game");
 	menu_add_entry(menu, menu_entry);
@@ -250,6 +240,16 @@ static void callback_options(menu_t *caller_menu) {
     menu_entry_add_entry(menu_entry, "Hw Aspect");
     menu_entry_add_entry(menu_entry, "Hw Full");
     menu_entry->selected_entry = selectedscaler;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "DMG Palette"); // TEST FUNCTION
+    menu_add_entry(menu, menu_entry);
+    menu_entry->callback = callback_dmgpalette;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "DMG Border"); // TEST FUNCTION
+    menu_add_entry(menu, menu_entry);
+    menu_entry->callback = callback_dmgborderimage;
 
 
     menu_entry = new_menu_entry(0);
@@ -412,7 +412,7 @@ static void callback_dmgborderimage(menu_t *caller_menu) {
     menu = new_menu();
 
     menu_set_header(menu, "GCW-Gambatte (WIP)");
-    menu_set_title(menu, "DMG Border Image");
+    menu_set_title(menu, "DMG Border");
     menu->back_callback = callback_dmgborderimage_back;
 
     numdmgborders = scandir("/usr/local/home/.gambatte/borders", &dmgborderlist, parse_ext_png, alphasort);

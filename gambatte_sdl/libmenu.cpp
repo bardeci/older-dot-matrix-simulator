@@ -10,6 +10,7 @@
 #include <assert.h>
 #include <SDL/SDL.h>
 #include <SDL/SDL_image.h>
+#include <math.h>
 
 #include "libmenu.h"
 #include "SFont.h"
@@ -17,7 +18,6 @@
 
 static void display_menu(SDL_Surface *surface, menu_t *menu);
 static void redraw(menu_t *menu);
-static void clear_surface(SDL_Surface *surface, Uint32 color);
 static void invert_rect(SDL_Surface* surface, SDL_Rect *rect);
 static void put_pixel(SDL_Surface *surface, int x, int y, Uint32 pixel);
 static Uint32 get_pixel(SDL_Surface *surface, int x, int y);
@@ -30,10 +30,12 @@ static SFont_Font* font = NULL;
 
 SDL_Surface *menuscreen;
 SDL_Surface *menuscreencolored;
-SDL_Surface *borderimg;
-int selectedscaler = 0;
+//SDL_Surface *borderimg;
+int selectedscaler = 0, showfps = 0, gameiscgb = 0;
 uint32_t menupalblack = 0x000000, menupaldark = 0x505450, menupallight = 0xA8A8A8, menupalwhite = 0xF8FCF8;
-std::string dmgbordername = "NONE", palname = "No palette";
+std::string dmgbordername = "No border.png", gbcbordername = "No border.png", palname = "No palette.png";
+std::string homedir = getenv("HOME");
+
 
 void libmenu_set_screen(SDL_Surface *set_screen) {
 	screen = set_screen;
@@ -181,34 +183,61 @@ static void display_menu(SDL_Surface *surface, menu_t *menu) {
     SFont_WriteCenter(surface, font, (line * font_height), menu->header);
     line ++;
     SFont_WriteCenter(surface, font, (line * font_height), menu->title);
-    if(uparrow == 1){
-    	line ++;
-    	SFont_WriteCenter(surface, font, line * font_height, "{"); // up arrow
-    	line ++;
-    } else {
-    	line += 2;
-    }
-	for (i = posbegin; i < posend; i++) {
-		if (menu->entries[i]->is_shiftable) {
-			sprintf(buffer, "%s: <%s>", menu->entries[i]->text, menu->entries[i]->entries[menu->entries[i]->selected_entry]);
-			text = buffer;
-		} else {
-			text = menu->entries[i]->text;
+
+    if(menu->n_entries >= linelimit){ // menu items fill entire screen, do not require centering
+	    if(uparrow == 1){
+	    	line ++;
+	    	SFont_WriteCenter(surface, font, line * font_height, "{"); // up arrow
+	    	line ++;
+	    } else {
+	    	line += 2;
+	    }
+		for (i = posbegin; i < posend; i++) {
+			if (menu->entries[i]->is_shiftable) {
+				sprintf(buffer, "%s: <%s>", menu->entries[i]->text, menu->entries[i]->entries[menu->entries[i]->selected_entry]);
+				text = buffer;
+			} else {
+				text = menu->entries[i]->text;
+			}
+			SFont_WriteCenter(surface, font, line * font_height, text);
+			if (menu->selected_entry == i) {
+				width = SFont_TextWidth(font, text);
+				highlight.x = ((surface->w - width) / 2) - highlight_margin;
+				highlight.y = line * font_height;
+				highlight.w = width + (highlight_margin * 2);
+				highlight.h = font_height;
+				invert_rect(surface, &highlight);
+			}
+			line++;
 		}
-		SFont_WriteCenter(surface, font, line * font_height, text);
-		if (menu->selected_entry == i) {
-			width = SFont_TextWidth(font, text);
-			highlight.x = ((surface->w - width) / 2) - highlight_margin;
-			highlight.y = line * font_height;
-			highlight.w = width + (highlight_margin * 2);
-			highlight.h = font_height;
-			invert_rect(surface, &highlight);
+		if(downarrow == 1){
+	    	SFont_WriteCenter(surface, font, line * font_height, "}"); // down arrow
+	    }
+	} else { // few menu items, require centering
+
+		int posoffset = floor((linelimit - menu->n_entries) / 2);
+		line += 2;
+		line += posoffset;
+		for (i = posbegin; i < posend; i++) {
+			if (menu->entries[i]->is_shiftable) {
+				sprintf(buffer, "%s: <%s>", menu->entries[i]->text, menu->entries[i]->entries[menu->entries[i]->selected_entry]);
+				text = buffer;
+			} else {
+				text = menu->entries[i]->text;
+			}
+			SFont_WriteCenter(surface, font, line * font_height, text);
+			if (menu->selected_entry == i) {
+				width = SFont_TextWidth(font, text);
+				highlight.x = ((surface->w - width) / 2) - highlight_margin;
+				highlight.y = line * font_height;
+				highlight.w = width + (highlight_margin * 2);
+				highlight.h = font_height;
+				invert_rect(surface, &highlight);
+			}
+			line++;
 		}
-		line++;
 	}
-	if(downarrow == 1){
-    	SFont_WriteCenter(surface, font, line * font_height, "}"); // down arrow
-    }
+
     SFont_WriteCenter(surface, font, 17 * font_height, "B-Back      A-Accept"); // 17 = last line of screen (footer)
 }
 
@@ -323,12 +352,12 @@ void free_menusurfaces(){
 	SDL_FreeSurface(menuscreencolored);
 }
 
-int currentEntryInList(menu_t *menu, std::string text){
+int currentEntryInList(menu_t *menu, std::string fname){
+	fname = fname.substr(0, fname.length() - 4);
     int count = menu->n_entries;
     int i;
-    for (i = 0; i < count; ++i)
-    {
-    	if(strcmp(text.c_str(), menu->entries[i]->text) == 0){
+    for (i = 0; i < count; ++i) {
+    	if(strcmp(fname.c_str(), menu->entries[i]->text) == 0){
     		return i;
     	}
     }
@@ -336,17 +365,6 @@ int currentEntryInList(menu_t *menu, std::string text){
 }
 
 void paint_titlebar(){
-	/*SDL_Rect rect;
-	rect.x = 0;
-    rect.y = 0;
-    rect.w = 160;
-    rect.h = 24;
-    SDL_FillRect(menuscreen, &rect, 0x505050);
-    rect.x = 1;
-    rect.y = 1;
-    rect.w = 158;
-    rect.h = 22;
-    SDL_FillRect(menuscreen, &rect, 0xA0A0A0);*/
     SDL_Rect rect;
     rect.x = 0;
     rect.y = 0;
@@ -360,10 +378,10 @@ void paint_titlebar(){
     SDL_FillRect(menuscreen, &rect, 0xA0A0A0);
 }
 
-void load_border(std::string borderfilename){
+void load_border(std::string borderfilename){ //load border from menu
 	SDL_FreeSurface(borderimg);
-	std::string fullimgpath;
-    fullimgpath = ("/usr/local/home/.gambatte/borders/" + borderfilename);
+	std::string fullimgpath = (homedir + "/.gambatte/borders/");
+	fullimgpath += (borderfilename);
     borderimg = IMG_Load(fullimgpath.c_str());
     if(!borderimg){
     	clear_surface(screen, 0);
@@ -372,11 +390,10 @@ void load_border(std::string borderfilename){
 		clear_surface(screen, 0);
 		clear_surface(menuscreen, 0xFFFFFF);
 		blitter_p->scaleMenu();
-    	if(borderfilename != "NONE"){
+    	if(borderfilename != "No border.png"){
     		printf("error loading %s\n", fullimgpath.c_str());
     	}
     }
-
 }
 
 void paint_border(SDL_Surface *surface){
@@ -436,7 +453,7 @@ uint32_t convert_hexcolor(SDL_Surface *surface, const uint32_t color){
 	return result;
 }
 
-/************************************COLORIZE MENU*****************************************/
+/************************************ COLORIZE MENU SCREEN *****************************************/
 
 uint32_t getpixel(SDL_Surface *surface, int x, int y)
 {
@@ -557,6 +574,7 @@ void convert_bw_surface_colors(SDL_Surface *surface, SDL_Surface *surface2, cons
     rect.h = 144;
     SDL_BlitSurface(surface2, NULL, surface, &rect);
 }
+
 /********************************END OF COLORIZE MENU***********************************/
 
 static void invert_rect(SDL_Surface* surface, SDL_Rect *rect) {
@@ -598,8 +616,11 @@ static void invert_rect(SDL_Surface* surface, SDL_Rect *rect) {
 
 static void redraw(menu_t *menu) {
 	clear_surface(menuscreen, 0xFFFFFF);
-	if(dmgbordername != "NONE"){
+	if((!gambatte_p->isCgb()) && (dmgbordername != "No border.png")) { // if system is DMG
 		clear_surface(screen, convert_hexcolor(screen, menupalwhite));
+		paint_border(screen);
+	} else if((gambatte_p->isCgb()) && (gbcbordername != "No border.png")) { // if system is GBC
+		clear_surface(screen, 0xFFFFFF);
 		paint_border(screen);
 	}
 		
@@ -608,7 +629,7 @@ static void redraw(menu_t *menu) {
 	SDL_Flip(screen);
 }
 
-static void clear_surface(SDL_Surface *surface, Uint32 color) {
+void clear_surface(SDL_Surface *surface, Uint32 color) {
 	SDL_Rect rect;
 	rect.x = 0;
 	rect.y = 0;
@@ -653,4 +674,122 @@ static Uint32 get_pixel(SDL_Surface *surface, int x, int y) {
 		break;
 	}
 	return 0;
+}
+
+void loadPalette(std::string palettefile){
+	Uint32 values[12];
+	std::string filepath = (homedir + "/.gambatte/palettes/");
+    filepath.append(palettefile);
+
+	FILE * fpal;
+    fpal = fopen(filepath.c_str(), "r");
+    if (fpal == NULL) {
+		printf("Failed to open palette file %s\n", filepath.c_str());
+		return;
+	}
+    int j = 0;
+    for (int i = 0; i < 20; ++i) { // i do 20 tries, but 12 is enough. TODO: Find a better way of parsing the palette values.
+        if(fscanf(fpal, "%x", &values[j]) == 1){
+            j++;
+        }
+    }
+    if (j == 12){ // all 12 palette values were successfully loaded
+        set_menu_palette(values[0], values[1], values[2], values[3]);
+        int m = 0;
+        for (int i = 0; i < 3; ++i) {
+            for (int k = 0; k < 4; ++k) {
+                gambatte_p->setDmgPaletteColor(i, k, values[m]);
+                m++;
+            }
+        }
+    } else {
+        printf("error reading: %s:\n",filepath.c_str());
+        printf("bad file format or file does not exist.\n");
+    }
+    fclose(fpal);
+}
+
+void saveConfig(){
+	std::string configfile = (homedir + "/.gambatte/config.cfg");
+	FILE * cfile;
+    cfile = fopen(configfile.c_str(), "w");
+    if (cfile == NULL) {
+		printf("Failed to open config file for writing.\n");
+		return;
+	}
+    fprintf(cfile,
+		"SHOWFPS %d\n"
+		"SELECTEDSCALER %d\n"
+		"PALNAME %s\n"
+		"DMGBORDERNAME %s\n"
+		"GBCBORDERNAME %s\n",
+		showfps,
+		selectedscaler,
+		palname.c_str(),
+		dmgbordername.c_str(),
+		gbcbordername.c_str());
+    fclose(cfile);
+}
+
+void loadConfig(){
+	std::string configfile = (homedir + "/.gambatte/config.cfg");
+	FILE * cfile;
+	char line[4096];
+    cfile = fopen(configfile.c_str(), "r");
+    if (cfile == NULL) {
+		printf("Failed to open config file for reading.\n");
+		return;
+	}
+	while (fgets(line, sizeof(line), cfile)) {
+		char *arg = strchr(line, ' ');
+		int value;
+		char charvalue[32];
+		std::string stringvalue;
+
+		if (!arg) {
+			continue;
+		}
+
+		*arg = '\0';
+		arg++;
+
+		if (!strcmp(line, "SHOWFPS")) {
+			sscanf(arg, "%d", &value);
+			showfps = value;
+		} else if (!strcmp(line, "SELECTEDSCALER")) {
+			sscanf(arg, "%d", &value);
+			selectedscaler = value;
+		} else if (!strcmp(line, "PALNAME")) {
+			int len = strlen(arg);
+			if (len == 0 || len > sizeof(charvalue) - 1) {
+				continue;
+			}
+			if (arg[len-1] == '\n') {
+				arg[len-1] = '\0';
+			}
+			strcpy(charvalue, arg);
+			palname = std::string(charvalue);
+		} else if (!strcmp(line, "DMGBORDERNAME")) {
+			int len = strlen(arg);
+			if (len == 0 || len > sizeof(charvalue) - 1) {
+				continue;
+			}
+			if (arg[len-1] == '\n') {
+				arg[len-1] = '\0';
+			}
+			strcpy(charvalue, arg);
+			dmgbordername = std::string(charvalue);
+		} else if (!strcmp(line, "GBCBORDERNAME")) {
+			int len = strlen(arg);
+			if (len == 0 || len > sizeof(charvalue) - 1) {
+				continue;
+			}
+			if (arg[len-1] == '\n') {
+				arg[len-1] = '\0';
+			}
+			strcpy(charvalue, arg);
+			gbcbordername = std::string(charvalue);
+		}
+	}
+	fclose(cfile);
 }

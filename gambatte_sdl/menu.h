@@ -5,6 +5,7 @@
 #include "src/blitterwrapper.h"
 #include "libmenu.h"
 
+extern gambatte::GB *gambatte_p;
 extern BlitterWrapper *blitter_p;
 extern SDL_Surface *surface;
 

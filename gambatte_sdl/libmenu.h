@@ -41,9 +41,10 @@ struct Menu_t {
 
 extern SDL_Surface *menuscreen;
 extern SDL_Surface *menuscreencolored;
-extern int selectedscaler;
+//extern SDL_Surface *borderimg;
+extern int selectedscaler, showfps, gameiscgb;
 extern uint32_t menupalblack, menupaldark, menupallight, menupalwhite;
-extern std::string dmgbordername, palname;
+extern std::string dmgbordername, gbcbordername, palname, homedir;
 
 
 void libmenu_set_screen(SDL_Surface *set_screen);
@@ -70,6 +71,10 @@ void load_border(std::string borderfilename);
 void paint_border(SDL_Surface *surface);
 uint32_t convert_hexcolor(SDL_Surface *surface, const uint32_t color);
 int currentEntryInList(menu_t *menu, std::string text);
+void clear_surface(SDL_Surface *surface, Uint32 color);
+void loadPalette(std::string palettefile);
+void saveConfig();
+void loadConfig();
 
 
 #ifdef __cplusplus

@@ -20,6 +20,10 @@
 #define SDLBLITTER_H
 
 #include <SDL.h>
+#include <string.h>
+#include <string>
+#include <SDL/SDL.h>
+#include <SDL/SDL_image.h>
 
 class SdlBlitter {
 public:
@@ -56,5 +60,7 @@ public:
 	void setYuv(const bool yuv) { if (!screen) this->yuv = yuv; }
 // 	bool failed() const { return screen == NULL; }
 };
+
+extern SDL_Surface *borderimg;
 
 #endif

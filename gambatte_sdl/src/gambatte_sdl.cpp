@@ -30,6 +30,9 @@
 #include <memory>
 #include <vector>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include "audiodata.h"
 #include "syncfunc.h"
 #include "parser.h"
@@ -451,6 +454,21 @@ static void printUsage(std::vector<DescOption*> &v) {
 
 bool GambatteSdl::init(int argc, char **argv) {
 	std::printf("Gambatte SDL SVN r309\n");
+
+	//create necessary directories
+	std::string basicdirpath;
+
+	basicdirpath = (homedir + "/.gambatte/");
+	mkdir(basicdirpath.c_str(), 0777);
+
+	basicdirpath = (homedir + "/.gambatte/palettes/");
+	mkdir(basicdirpath.c_str(), 0777);
+
+	basicdirpath = (homedir + "/.gambatte/borders/");
+	mkdir(basicdirpath.c_str(), 0777);
+
+	basicdirpath = (homedir + "/.gambatte/saves/");
+	mkdir(basicdirpath.c_str(), 0777);
 	
 	if (sdlIniter.isFailed())
 		return 1;
@@ -590,9 +608,52 @@ bool GambatteSdl::init(int argc, char **argv) {
 	
 	SDL_JoystickEventState(SDL_ENABLE);
 	
+	loadConfig(); // load config.cfg file on startup
 	blitter.init();
 	SDL_ShowCursor(SDL_DISABLE);
 	SDL_WM_SetCaption("Gambatte SDL", NULL);
+
+	std::string savedir = (homedir + "/.gambatte/saves/");
+	gambatte.setSaveDir(savedir);
+
+	init_fps_font(); // load fps font on startup
+	if(gambatte.isCgb()){
+		gameiscgb = 1;
+	} else {
+		gameiscgb = 0;
+		
+		// load DMG palette on startup
+		Uint32 values[12];
+		std::string filepath = (homedir + "/.gambatte/palettes/");
+	    filepath.append(palname);
+
+		FILE * fpal;
+	    fpal = fopen(filepath.c_str(), "r");
+	    if (fpal == NULL) {
+			printf("Failed to open palette file %s\n", filepath.c_str());
+			return 0;
+		}
+	    int j = 0;
+	    for (int i = 0; i < 12; ++i) { // TODO: Find a better way of parsing the palette values.
+	        if(fscanf(fpal, "%x", &values[j]) == 1){
+	            j++;
+	        }
+	    }
+	    if (j == 12){ // all 12 palette values were successfully loaded
+	        set_menu_palette(values[0], values[1], values[2], values[3]);
+	        int m = 0;
+	        for (int i = 0; i < 3; ++i) {
+	            for (int k = 0; k < 4; ++k) {
+	                gambatte.setDmgPaletteColor(i, k, values[m]);
+	                m++;
+	            }
+	        }
+	    } else {
+	        printf("error reading: %s:\n",filepath.c_str());
+	        printf("bad file format or file does not exist.\n");
+	    }
+	    fclose(fpal);
+	}
 	
 	return 0;
 }

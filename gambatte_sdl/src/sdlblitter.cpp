@@ -23,8 +23,14 @@
 #include "../menu.h"
 #include "../scaler.h"
 
+#include <string.h>
+#include <string>
+#include <SDL/SDL.h>
+#include <SDL/SDL_image.h>
+
 SDL_Surface *lastframe;
 SDL_Surface *currframe;
+SDL_Surface *borderimg;
 
 SdlBlitter::SdlBlitter(const bool startFull, const Uint8 scale, const bool yuv) :
 screen(NULL),
@@ -52,6 +58,46 @@ void init_ghostframes() {
 	SDL_SetAlpha(lastframe, SDL_SRCALPHA, 128);
 }
 
+void init_border_dmg(SDL_Surface *dst){ //load border on emulator start
+	if (!dst){
+		printf("init_border: screen is not initialized");
+		return;
+	}
+	SDL_FreeSurface(borderimg);
+	std::string fullimgpath;
+    fullimgpath = (homedir + "/.gambatte/borders/");
+	fullimgpath += (dmgbordername);
+	borderimg = IMG_Load(fullimgpath.c_str());
+	if(!borderimg){
+	    printf("error loading %s\n", fullimgpath.c_str());
+	    return;
+	}
+	if(dmgbordername != "No border.png") { // if system is DMG
+		clear_surface(dst, convert_hexcolor(dst, menupalwhite));
+		paint_border(dst);
+	}
+}
+
+void init_border_gbc(SDL_Surface *dst){ //load border on emulator start
+	if (!dst){
+		printf("init_border: screen is not initialized");
+		return;
+	}
+	SDL_FreeSurface(borderimg);
+	std::string fullimgpath;
+    fullimgpath = (homedir + "/.gambatte/borders/");
+	fullimgpath += (gbcbordername);
+	borderimg = IMG_Load(fullimgpath.c_str());
+	if(!borderimg){
+	    printf("error loading %s\n", fullimgpath.c_str());
+	    return;
+	}
+	if(dmgbordername != "No border.png") { // if system is DMG
+		clear_surface(dst, 0xFFFFFF);
+		paint_border(dst);
+	}
+}
+
 void SdlBlitter::setBufferDimensions(const unsigned int width, const unsigned int height) {
 	//surface = screen = SDL_SetVideoMode(width * scale, height * scale, SDL_GetVideoInfo()->vfmt->BitsPerPixel == 16 ? 16 : 32, screen ? screen->flags : startFlags);
 	FILE* aspect_ratio_file = fopen("/sys/devices/platform/jz-lcd.0/keep_aspect_ratio", "w");
@@ -65,14 +111,14 @@ void SdlBlitter::setBufferDimensions(const unsigned int width, const unsigned in
 			surface = screen = SDL_SetVideoMode(208, 160, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			if (aspect_ratio_file)
 			{ 
-				fwrite("0", 1, 1, aspect_ratio_file);
+				fwrite("1", 1, 1, aspect_ratio_file);
 			}
 			break;
 		case 4:		/* Hardware Aspect */
 			surface = screen = SDL_SetVideoMode(192, 144, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			if (aspect_ratio_file)
 			{ 
-				fwrite("0", 1, 1, aspect_ratio_file);
+				fwrite("1", 1, 1, aspect_ratio_file);
 			}
 			break;
 		case 5:		/* Hardware Fullscreen */
@@ -92,6 +138,7 @@ void SdlBlitter::setBufferDimensions(const unsigned int width, const unsigned in
 	menu_set_screen(screen);
 	surface = SDL_CreateRGBSurface(SDL_SWSURFACE, width, height, 16, 0, 0, 0, 0);
 	init_ghostframes();
+
 	//fprintf(stderr, "surface w: %d, h: %d, pitch: %d, bpp: %d\n", surface->w, surface->h, surface->pitch, surface->format->BitsPerPixel);
 	//fprintf(stderr, "hwscreen w: %d, h: %d, pitch: %d, bpp %d\n", screen->w, screen->h, screen->pitch, screen->format->BitsPerPixel);
 	//surface = SDL_CreateRGBSurface(SDL_HWSURFACE, width, height, screen->format->BitsPerPixel, 0, 0, 0, 0);
@@ -206,6 +253,7 @@ void store_lastframe2(SDL_Surface *surface) { // test function - currently not u
 static int frames = 0;
 static clock_t old_time = 0;
 static int fps = 0;
+static int firstframe = 0;
 	
 void SdlBlitter::draw() {
 	clock_t cur_time;
@@ -221,7 +269,20 @@ void SdlBlitter::draw() {
 	if (!screen || !surface)
 		return;
 
-	int ghosting = 1; // WIP - TODO: Make a menu option for turning ghosting on/off.
+	if(firstframe <= 1){ // paints border on frames 0 and 1 to avoid double-buffer flickering
+		if(gameiscgb == 1)
+			init_border_gbc(screen);
+		else
+			init_border_dmg(screen);
+	}
+
+	if(firstframe >= 8){ // Ensure firstframe variable only gets value 0 and 1 once.
+		firstframe = 2;
+	} else {
+		firstframe++;
+	}
+
+	int ghosting = 1; // WIP - TODO: Make a menu option for turning ghosting on/off. This forces ghosting always ON.
 	
 	if(ghosting == 0){
 		switch(selectedscaler) {
@@ -301,7 +362,6 @@ void SdlBlitter::draw() {
 		}
 	}
 	
-	
 	/*
 	if (!overlay && surface != screen) {
 		if (surface->format->BitsPerPixel == 16)
@@ -320,7 +380,11 @@ void SdlBlitter::scaleMenu() {
 	if (!screen || !menuscreen)
 		return;
 
-	convert_bw_surface_colors(menuscreen, menuscreencolored, menupalblack, menupaldark, menupallight, menupalwhite);
+	if(gambatte_p->isCgb()){
+		convert_bw_surface_colors(menuscreen, menuscreencolored, 0xC00000, 0xA0A030, 0xFFFF80, 0xFFFFFF); //if game is GBC, then menu has different colors
+	} else {
+		convert_bw_surface_colors(menuscreen, menuscreencolored, menupalblack, menupaldark, menupallight, menupalwhite); //if game is DMG, then menu matches DMG palette
+	}
 
 	switch(selectedscaler) {
 		case 0:		/* no scaler */

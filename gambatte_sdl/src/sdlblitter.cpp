@@ -281,8 +281,6 @@ void SdlBlitter::draw() {
 	} else {
 		firstframe++;
 	}
-
-	int ghosting = 1; // WIP - TODO: Make a menu option for turning ghosting on/off. This forces ghosting always ON.
 	
 	if(ghosting == 0){
 		switch(selectedscaler) {

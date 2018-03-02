@@ -23,6 +23,7 @@ typedef struct {
 	char *text;
 	char **entries;
 	int is_shiftable;
+	int disable_highlight; // test test test
 	int n_entries;
 	int selected_entry;
 	void (*callback)(menu_t *);
@@ -41,8 +42,7 @@ struct Menu_t {
 
 extern SDL_Surface *menuscreen;
 extern SDL_Surface *menuscreencolored;
-//extern SDL_Surface *borderimg;
-extern int selectedscaler, showfps, gameiscgb;
+extern int selectedscaler, showfps, ghosting, gameiscgb;
 extern uint32_t menupalblack, menupaldark, menupallight, menupalwhite;
 extern std::string dmgbordername, gbcbordername, palname, homedir;
 

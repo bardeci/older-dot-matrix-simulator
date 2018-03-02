@@ -30,8 +30,9 @@ static SFont_Font* font = NULL;
 
 SDL_Surface *menuscreen;
 SDL_Surface *menuscreencolored;
-//SDL_Surface *borderimg;
-int selectedscaler = 0, showfps = 0, gameiscgb = 0;
+
+// Default config values
+int selectedscaler = 0, showfps = 0, ghosting = 1, gameiscgb = 0;
 uint32_t menupalblack = 0x000000, menupaldark = 0x505450, menupallight = 0xA8A8A8, menupalwhite = 0xF8FCF8;
 std::string dmgbordername = "No border.png", gbcbordername = "No border.png", palname = "No palette.png";
 std::string homedir = getenv("HOME");
@@ -200,7 +201,7 @@ static void display_menu(SDL_Surface *surface, menu_t *menu) {
 				text = menu->entries[i]->text;
 			}
 			SFont_WriteCenter(surface, font, line * font_height, text);
-			if (menu->selected_entry == i) {
+			if ((menu->selected_entry == i) && (menu->entries[i]->disable_highlight == 0)){
 				width = SFont_TextWidth(font, text);
 				highlight.x = ((surface->w - width) / 2) - highlight_margin;
 				highlight.y = line * font_height;
@@ -226,7 +227,7 @@ static void display_menu(SDL_Surface *surface, menu_t *menu) {
 				text = menu->entries[i]->text;
 			}
 			SFont_WriteCenter(surface, font, line * font_height, text);
-			if (menu->selected_entry == i) {
+			if ((menu->selected_entry == i) && (menu->entries[i]->disable_highlight == 0)) {
 				width = SFont_TextWidth(font, text);
 				highlight.x = ((surface->w - width) / 2) - highlight_margin;
 				highlight.y = line * font_height;
@@ -238,7 +239,7 @@ static void display_menu(SDL_Surface *surface, menu_t *menu) {
 		}
 	}
 
-    SFont_WriteCenter(surface, font, 17 * font_height, "B-Back      A-Accept"); // 17 = last line of screen (footer)
+    SFont_WriteCenter(surface, font, 17 * font_height, "B-Back      A-Select"); // 17 = last line of screen (footer)
 }
 
 menu_t *new_menu() {
@@ -293,6 +294,7 @@ menu_entry_t *new_menu_entry(int is_shiftable) {
 	entry->entries = NULL;
     entry->text = NULL;
 	entry->is_shiftable = is_shiftable;
+	entry->disable_highlight = 0;
 	entry->n_entries = 0;
 	entry->selected_entry = 0;
     entry->callback = NULL;
@@ -722,12 +724,14 @@ void saveConfig(){
 		"SELECTEDSCALER %d\n"
 		"PALNAME %s\n"
 		"DMGBORDERNAME %s\n"
-		"GBCBORDERNAME %s\n",
+		"GBCBORDERNAME %s\n"
+		"GHOSTING %d\n",
 		showfps,
 		selectedscaler,
 		palname.c_str(),
 		dmgbordername.c_str(),
-		gbcbordername.c_str());
+		gbcbordername.c_str(),
+		ghosting);
     fclose(cfile);
 }
 
@@ -789,6 +793,9 @@ void loadConfig(){
 			}
 			strcpy(charvalue, arg);
 			gbcbordername = std::string(charvalue);
+		} else if (!strcmp(line, "GHOSTING")) {
+			sscanf(arg, "%d", &value);
+			ghosting = value;
 		}
 	}
 	fclose(cfile);

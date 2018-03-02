@@ -10,6 +10,7 @@
 #include "sfont_gameboy.h"
 
 #include <string.h>
+#include <string>
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
@@ -67,19 +68,23 @@ void menu_set_screen(SDL_Surface *set_screen) {
 
 /* ============================ MAIN MENU =========================== */
 
-static void callback_quit(menu_t *caller_menu);
 static void callback_return(menu_t *caller_menu);
 static void callback_savestate(menu_t *caller_menu);
 static void callback_loadstate(menu_t *caller_menu);
 static void callback_selectstate(menu_t *caller_menu);
-static void callback_selectedstate(menu_t *caller_menu);
-static void callback_options(menu_t *caller_menu);
 static void callback_restart(menu_t *caller_menu);
+static void callback_options(menu_t *caller_menu);
+static void callback_about(menu_t *caller_menu);
+static void callback_quit(menu_t *caller_menu);
+
 static void callback_showfps(menu_t *caller_menu);
 static void callback_scaler(menu_t *caller_menu);
 static void callback_dmgpalette(menu_t *caller_menu);
 static void callback_dmgborderimage(menu_t *caller_menu);
 static void callback_gbcborderimage(menu_t *caller_menu);
+static void callback_ghosting(menu_t *caller_menu);
+
+std::string menu_main_title = ("-GAMBATTE-GCWZERO-");
 
 gambatte::GB *gambatte_p;
 BlitterWrapper *blitter_p;
@@ -98,7 +103,7 @@ void main_menu(gambatte::GB *gambatte, BlitterWrapper *blitter) {
     enum {RETURN = 0, SAVE_STATE = 1, LOAD_STATE = 2, SELECT_STATE = 3, OPTIONS = 4, RESTART = 5, QUIT = 6};
     
     menu = new_menu();
-    menu_set_header(menu, "GCW-Gambatte (WIP)");
+    menu_set_header(menu, menu_main_title.c_str());
 	menu_set_title(menu, "Main Menu");
 	menu->back_callback = callback_menu_quit;
 	
@@ -131,6 +136,11 @@ void main_menu(gambatte::GB *gambatte, BlitterWrapper *blitter) {
 	menu_entry_set_text(menu_entry, "Options");
 	menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_options;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "About");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->callback = callback_about;
     
 	menu_entry = new_menu_entry(0);
 	menu_entry_set_text(menu_entry, "Quit");
@@ -172,6 +182,8 @@ static void callback_restart(menu_t *caller_menu) {
 
 /* ==================== SELECT STATE MENU =========================== */
 
+static void callback_selectedstate(menu_t *caller_menu);
+
 static void callback_selectstate(menu_t *caller_menu) {
     #define N_STATES 10
     menu_t *menu;
@@ -181,7 +193,7 @@ static void callback_selectstate(menu_t *caller_menu) {
     (void) caller_menu;
     menu = new_menu();
 
-    menu_set_header(menu, "GCW-Gambatte (WIP)");
+    menu_set_header(menu, menu_main_title.c_str());
     menu_set_title(menu, "Select State");
 	menu->back_callback = callback_menu_quit;
 	
@@ -215,7 +227,7 @@ static void callback_options(menu_t *caller_menu) {
     (void) caller_menu;
     menu = new_menu();
         
-    menu_set_header(menu, "GCW-Gambatte (WIP)");
+    menu_set_header(menu, menu_main_title.c_str());
     menu_set_title(menu, "Options");
 	menu->back_callback = callback_options_back;
 
@@ -243,6 +255,11 @@ static void callback_options(menu_t *caller_menu) {
     menu_entry_set_text(menu_entry, "GBC Border");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_gbcborderimage;
+
+    menu_entry = new_menu_entry(0); //3
+    menu_entry_set_text(menu_entry, "Ghosting");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->callback = callback_ghosting;
 
     menu_entry = new_menu_entry(0); //4
     menu_entry_set_text(menu_entry, "Save settings");
@@ -288,7 +305,7 @@ static void callback_showfps(menu_t *caller_menu) {
     (void) caller_menu;
     menu = new_menu();
 
-    menu_set_header(menu, "GCW-Gambatte (WIP)");
+    menu_set_header(menu, menu_main_title.c_str());
     menu_set_title(menu, "Show FPS");
     menu->back_callback = callback_showfps_back;
 
@@ -330,7 +347,7 @@ static void callback_scaler(menu_t *caller_menu) {
     (void) caller_menu;
     menu = new_menu();
 
-    menu_set_header(menu, "GCW-Gambatte (WIP)");
+    menu_set_header(menu, menu_main_title.c_str());
     menu_set_title(menu, "Select Scaler");
     menu->back_callback = callback_scaler_back;
 
@@ -398,7 +415,7 @@ static void callback_dmgpalette(menu_t *caller_menu) {
     (void) caller_menu;
     menu = new_menu();
 
-    menu_set_header(menu, "GCW-Gambatte (WIP)");
+    menu_set_header(menu, menu_main_title.c_str());
     menu_set_title(menu, "DMG Palette");
     menu->back_callback = callback_dmgpalette_back;
 
@@ -494,7 +511,7 @@ static void callback_dmgborderimage(menu_t *caller_menu) {
     (void) caller_menu;
     menu = new_menu();
 
-    menu_set_header(menu, "GCW-Gambatte (WIP)");
+    menu_set_header(menu, menu_main_title.c_str());
     menu_set_title(menu, "DMG Border");
     menu->back_callback = callback_dmgborderimage_back;
 
@@ -578,7 +595,7 @@ static void callback_gbcborderimage(menu_t *caller_menu) {
     (void) caller_menu;
     menu = new_menu();
 
-    menu_set_header(menu, "GCW-Gambatte (WIP)");
+    menu_set_header(menu, menu_main_title.c_str());
     menu_set_title(menu, "GBC Border");
     menu->back_callback = callback_gbcborderimage_back;
 
@@ -631,3 +648,134 @@ static void callback_gbcborderimage_back(menu_t *caller_menu) {
     caller_menu->quit = 1;
 }
 
+/* ==================== GHOSTING MENU =========================== */
+
+static void callback_selectedghosting(menu_t *caller_menu);
+static void callback_ghosting_back(menu_t *caller_menu);
+
+static void callback_ghosting(menu_t *caller_menu) {
+
+    menu_t *menu;
+    menu_entry_t *menu_entry;
+    (void) caller_menu;
+    menu = new_menu();
+
+    menu_set_header(menu, menu_main_title.c_str());
+    menu_set_title(menu, "Ghosting");
+    menu->back_callback = callback_ghosting_back;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "OFF");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->callback = callback_selectedghosting;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "ON");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->callback = callback_selectedghosting;
+
+    menu->selected_entry = ghosting; 
+    
+    menu_main(menu);
+
+    delete_menu(menu);
+}
+
+static void callback_selectedghosting(menu_t *caller_menu) {
+    ghosting = caller_menu->selected_entry;
+    caller_menu->quit = 1;
+}
+
+static void callback_ghosting_back(menu_t *caller_menu) {
+    caller_menu->quit = 1;
+}
+
+/* ==================== ABOUT MENU =========================== */
+
+static void callback_about_back(menu_t *caller_menu);
+
+static void callback_about(menu_t *caller_menu) {
+
+    menu_t *menu;
+    menu_entry_t *menu_entry;
+    (void) caller_menu;
+    menu = new_menu();
+
+    menu_set_header(menu, menu_main_title.c_str());
+    menu_set_title(menu, "About");
+    menu->back_callback = callback_scaler_back;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "Gambatte");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->disable_highlight = 1;
+    menu_entry->callback = callback_scaler_back;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "by Sindre Aamas");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->disable_highlight = 1;
+    menu_entry->callback = callback_scaler_back;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->disable_highlight = 1;
+    menu_entry->callback = callback_scaler_back;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "GCW Zero port by");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->disable_highlight = 1;
+    menu_entry->callback = callback_scaler_back;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "Surkow and Hi-Ban");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->disable_highlight = 1;
+    menu_entry->callback = callback_scaler_back;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->disable_highlight = 1;
+    menu_entry->callback = callback_scaler_back;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "Gambatte version:");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->disable_highlight = 1;
+    menu_entry->callback = callback_scaler_back;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "0.4.1");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->disable_highlight = 1;
+    menu_entry->callback = callback_scaler_back;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->disable_highlight = 1;
+    menu_entry->callback = callback_scaler_back;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "build version:");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->disable_highlight = 1;
+    menu_entry->callback = callback_scaler_back;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "20180302");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->disable_highlight = 1;
+    menu_entry->callback = callback_scaler_back;
+    
+    menu_main(menu);
+
+    delete_menu(menu);
+}
+
+static void callback_about_back(menu_t *caller_menu) {
+    caller_menu->quit = 1;
+}

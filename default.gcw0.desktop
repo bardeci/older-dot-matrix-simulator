@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Gambatte
+Comment=Gameboy emulator
+Exec=gambatte_sdl %f
+Terminal=false
+Type=Application
+StartupNotify=true
+Icon=gambatte
+Categories=emulators;
+MimeType=application/x-gameboy-rom;application/x-gbc-rom;application/x-gzip;

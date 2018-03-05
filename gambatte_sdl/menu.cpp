@@ -4,6 +4,7 @@
 
 #include <gambatte.h>
 #include "src/blitterwrapper.h"
+#include "builddate.h"
 
 #include "libmenu.h"
 #include "font12px.h"
@@ -23,7 +24,7 @@ int init_fps_font() {
     SDL_Surface *font_bitmap_surface = NULL;
     SDL_RWops *RWops;
     
-    RWops = SDL_RWFromMem(sfont_gameboy_fps, 1303);
+    RWops = SDL_RWFromMem(sfont_gameboy_fps, 1234);
     font_bitmap_surface = IMG_LoadPNG_RW(RWops);
     SDL_FreeRW(RWops);
     if (!font_bitmap_surface) {
@@ -44,7 +45,7 @@ int init_menu() {
     SDL_Surface *font_bitmap_surface = NULL;
     SDL_RWops *RWops;
     
-	RWops = SDL_RWFromMem(sfont_gameboy_black, 1118);
+	RWops = SDL_RWFromMem(sfont_gameboy_black, 894);
     font_bitmap_surface = IMG_LoadPNG_RW(RWops);
     SDL_FreeRW(RWops);
     if (!font_bitmap_surface) {
@@ -84,7 +85,7 @@ static void callback_dmgborderimage(menu_t *caller_menu);
 static void callback_gbcborderimage(menu_t *caller_menu);
 static void callback_ghosting(menu_t *caller_menu);
 
-std::string menu_main_title = ("-GAMBATTE-GCWZERO-");
+std::string menu_main_title = ("GAMBATTE-GCWZERO");
 
 gambatte::GB *gambatte_p;
 BlitterWrapper *blitter_p;
@@ -242,7 +243,7 @@ static void callback_options(menu_t *caller_menu) {
     menu_entry->callback = callback_scaler;
 
     menu_entry = new_menu_entry(0); //2
-    menu_entry_set_text(menu_entry, "DMG Palette");
+    menu_entry_set_text(menu_entry, "Mono Palette");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_dmgpalette;
 
@@ -416,7 +417,7 @@ static void callback_dmgpalette(menu_t *caller_menu) {
     menu = new_menu();
 
     menu_set_header(menu, menu_main_title.c_str());
-    menu_set_title(menu, "DMG Palette");
+    menu_set_title(menu, "Mono Palette");
     menu->back_callback = callback_dmgpalette_back;
 
     menu_entry = new_menu_entry(0);
@@ -692,6 +693,7 @@ static void callback_ghosting_back(menu_t *caller_menu) {
 
 /* ==================== ABOUT MENU =========================== */
 
+
 static void callback_about_back(menu_t *caller_menu);
 
 static void callback_about(menu_t *caller_menu) {
@@ -766,7 +768,7 @@ static void callback_about(menu_t *caller_menu) {
     menu_entry->callback = callback_scaler_back;
 
     menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "20180302");
+    menu_entry_set_text(menu_entry, BUILDDATE);
     menu_add_entry(menu, menu_entry);
     menu_entry->disable_highlight = 1;
     menu_entry->callback = callback_scaler_back;

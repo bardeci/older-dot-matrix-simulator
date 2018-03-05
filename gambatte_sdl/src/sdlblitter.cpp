@@ -107,21 +107,35 @@ void SdlBlitter::setBufferDimensions(const unsigned int width, const unsigned in
 		case 2:		/* Ayla's fullscreen scaler */
 			surface = screen = SDL_SetVideoMode(320, 240, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			break;
-		case 3:		/* Hardware 1.5x */
+		case 3:		/* Hardware 1.25x */
+			surface = screen = SDL_SetVideoMode(256, 192, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
+			if (aspect_ratio_file)
+			{ 
+				fwrite("1", 1, 1, aspect_ratio_file);
+			}
+			break;
+		case 4:		/* Hardware 1.36x */
+			surface = screen = SDL_SetVideoMode(224, 176, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
+			if (aspect_ratio_file)
+			{ 
+				fwrite("1", 1, 1, aspect_ratio_file);
+			}
+			break;
+		case 5:		/* Hardware 1.5x */
 			surface = screen = SDL_SetVideoMode(208, 160, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			if (aspect_ratio_file)
 			{ 
 				fwrite("1", 1, 1, aspect_ratio_file);
 			}
 			break;
-		case 4:		/* Hardware Aspect */
+		case 6:		/* Hardware 1.66x */
 			surface = screen = SDL_SetVideoMode(192, 144, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			if (aspect_ratio_file)
 			{ 
 				fwrite("1", 1, 1, aspect_ratio_file);
 			}
 			break;
-		case 5:		/* Hardware Fullscreen */
+		case 7:		/* Hardware Fullscreen */
 			surface = screen = SDL_SetVideoMode(160, 144, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			if (aspect_ratio_file)
 			{ 
@@ -163,7 +177,23 @@ void SdlBlitter::setScreenRes() {
 			if(screen->w != 320 || screen->h != 240)
 				screen = SDL_SetVideoMode(320, 240, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			break;
-		case 3:		/* Hardware 1.5x */
+		case 3:		/* Hardware 1.25x */
+			if(screen->w != 256 || screen->h != 192)
+				screen = SDL_SetVideoMode(256, 192, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
+			if (aspect_ratio_file)
+			{ 
+				fwrite("1", 1, 1, aspect_ratio_file);
+			}
+			break;
+		case 4:		/* Hardware 1.36x */
+			if(screen->w != 224 || screen->h != 176)
+				screen = SDL_SetVideoMode(224, 176, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
+			if (aspect_ratio_file)
+			{ 
+				fwrite("1", 1, 1, aspect_ratio_file);
+			}
+			break;
+		case 5:		/* Hardware 1.5x */
 			if(screen->w != 208 || screen->h != 160)
 				screen = SDL_SetVideoMode(208, 160, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			if (aspect_ratio_file)
@@ -171,7 +201,7 @@ void SdlBlitter::setScreenRes() {
 				fwrite("1", 1, 1, aspect_ratio_file);
 			}
 			break;
-		case 4:		/* Hardware Aspect */
+		case 6:		/* Hardware 1.66x */
 			if(screen->w != 192 || screen->h != 144)
 				screen = SDL_SetVideoMode(192, 144, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			if (aspect_ratio_file)
@@ -179,7 +209,7 @@ void SdlBlitter::setScreenRes() {
 				fwrite("1", 1, 1, aspect_ratio_file);
 			}
 			break;
-		case 5:		/* Hardware Fullscreen */
+		case 7:		/* Hardware Fullscreen */
 			if(screen->w != 160 || screen->h != 144)
 				screen = SDL_SetVideoMode(160, 144, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
 			if (aspect_ratio_file)
@@ -307,9 +337,11 @@ void SdlBlitter::draw() {
 				SDL_UnlockSurface(surface);
 				SDL_UnlockSurface(screen);
 				break;
-			case 3:		/* Hardware 1.5x */
-			case 4:		/* Hardware Aspect */
-			case 5:		/* Hardware Fullscreen */
+			case 3:		/* Hardware 1.25x */
+			case 4:		/* Hardware 1.36x */
+			case 5:		/* Hardware 1.5x */
+			case 6:		/* Hardware 1.66x */
+			case 7:		/* Hardware Fullscreen */
 			default:
 				SDL_Rect dst2;
 				dst2.x = (screen->w - surface->w) / 2;
@@ -346,9 +378,11 @@ void SdlBlitter::draw() {
 				SDL_UnlockSurface(currframe);
 				SDL_UnlockSurface(screen);
 				break;
-			case 3:		/* Hardware 1.5x */
-			case 4:		/* Hardware Aspect */
-			case 5:		/* Hardware Fullscreen */
+			case 3:		/* Hardware 1.25x */
+			case 4:		/* Hardware 1.36x */
+			case 5:		/* Hardware 1.5x */
+			case 6:		/* Hardware 1.66x */
+			case 7:		/* Hardware Fullscreen */
 			default:
 				SDL_Rect dst2;
 				dst2.x = (screen->w - currframe->w) / 2;
@@ -408,9 +442,11 @@ void SdlBlitter::scaleMenu() {
 			SDL_UnlockSurface(menuscreen);
 			SDL_UnlockSurface(screen);
 			break;
-		case 3:		/* Hardware 1.5x */
-		case 4:		/* Hardware Aspect */
-		case 5:		/* Hardware Fullscreen */
+		case 3:		/* Hardware 1.25x */
+		case 4:		/* Hardware 1.36x */
+		case 5:		/* Hardware 1.5x */
+		case 6:		/* Hardware 1.66x */
+		case 7:		/* Hardware Fullscreen */
 		default:
 			SDL_Rect dst2;
 			dst2.x = (screen->w - menuscreen->w) / 2;

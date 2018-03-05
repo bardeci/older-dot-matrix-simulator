@@ -368,27 +368,37 @@ static void callback_scaler(menu_t *caller_menu) {
     menu_entry->callback = callback_selectedscaler;
 
     menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "Software 1.5x");
+    menu_entry_set_text(menu_entry, "1.50x (SW)");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_selectedscaler;
 
     menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "Software Full");
+    menu_entry_set_text(menu_entry, "Fscrn (SW)");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_selectedscaler;
 
     menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "Hardware 1.5x");
+    menu_entry_set_text(menu_entry, "1.25x (HW)");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_selectedscaler;
 
     menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "Hardware Aspect");
+    menu_entry_set_text(menu_entry, "1.36x (HW)");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_selectedscaler;
 
     menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "Hardware Full");
+    menu_entry_set_text(menu_entry, "1.50x (HW)");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->callback = callback_selectedscaler;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "1.66x (HW)");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->callback = callback_selectedscaler;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "Fscrn (HW)");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_selectedscaler;
 

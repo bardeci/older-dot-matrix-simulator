@@ -434,19 +434,31 @@ void paint_border(SDL_Surface *surface){
     		rect.w = 0;
     		rect.h = 0;
 			break;
-		case 3:		/* Hardware 1.5x */
+		case 3:		/* Hardware 1.25x */
+			rect.x = 32;
+    		rect.y = 23;
+    		rect.w = 256;
+    		rect.h = 192;
+			break;
+		case 4:		/* Hardware 1.36x */
+			rect.x = 48;
+    		rect.y = 31;
+    		rect.w = 224;
+    		rect.h = 176;
+			break;
+		case 5:		/* Hardware 1.5x */
 			rect.x = 56;
     		rect.y = 39;
     		rect.w = 208;
     		rect.h = 160;
 			break;
-		case 4:		/* Hardware Aspect */
+		case 6:		/* Hardware 1.66x*/
 			rect.x = 64;
     		rect.y = 47;
     		rect.w = 192;
     		rect.h = 144;
 			break;
-		case 5:		/* Hardware Fullscreen */
+		case 7:		/* Hardware Fullscreen */
 			rect.x = 0;
     		rect.y = 0;
     		rect.w = 0;

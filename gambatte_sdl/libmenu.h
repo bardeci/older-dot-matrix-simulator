@@ -23,7 +23,7 @@ typedef struct {
 	char *text;
 	char **entries;
 	int is_shiftable;
-	int disable_highlight; // test test test
+	int selectable; // test test test
 	int n_entries;
 	int selected_entry;
 	void (*callback)(menu_t *);

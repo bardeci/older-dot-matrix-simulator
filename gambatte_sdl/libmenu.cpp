@@ -48,7 +48,16 @@ void libmenu_set_font(SFont_Font *set_font) {
 
 int menu_main(menu_t *menu) {
     SDL_Event event;
-	int dirty;
+	int dirty, loop;
+	loop = 0;
+	while((menu->entries[menu->selected_entry]->selectable == 0) && (loop < menu->n_entries)) { //ensure we select a selectable entry, if there is any.
+		if (menu->selected_entry < menu->n_entries - 1) {
+			++menu->selected_entry;
+		} else {
+			menu->selected_entry = 0;
+		}
+		loop++;
+	}
     redraw(menu);
 	quit_menu = 0;
     while (menu->quit == 0) {
@@ -61,22 +70,28 @@ int menu_main(menu_t *menu) {
 				case SDL_KEYDOWN:
 					switch(event.key.keysym.sym) {
 						case SDLK_UP:
-							if (menu->selected_entry > 0) {
-								--menu->selected_entry;
-								dirty = 1;
-							} else {
-								menu->selected_entry = menu->n_entries - 1;
-								dirty = 1;
-							}
+							loop = 0;
+							do {
+								if (menu->selected_entry > 0) {
+									--menu->selected_entry;
+								} else {
+									menu->selected_entry = menu->n_entries - 1;
+								}
+								loop++;
+							} while((menu->entries[menu->selected_entry]->selectable == 0) && (loop < menu->n_entries)); //ensure we select a selectable entry, if there is any.
+							dirty = 1;
 							break;
 						case SDLK_DOWN:
-							if (menu->selected_entry < menu->n_entries - 1) {
-								++menu->selected_entry;
-								dirty = 1;
-							} else {
-								menu->selected_entry = 0;
-								dirty = 1;
-							}
+							loop = 0;
+							do {
+								if (menu->selected_entry < menu->n_entries - 1) {
+									++menu->selected_entry;
+								} else {
+									menu->selected_entry = 0;
+								}
+								loop++;
+							} while((menu->entries[menu->selected_entry]->selectable == 0) && (loop < menu->n_entries)); //ensure we select a selectable entry, if there is any.
+							dirty = 1;
 							break;
 						case SDLK_LEFT:
 							if (menu->entries[menu->selected_entry]->is_shiftable) {
@@ -201,7 +216,7 @@ static void display_menu(SDL_Surface *surface, menu_t *menu) {
 				text = menu->entries[i]->text;
 			}
 			SFont_WriteCenter(surface, font, line * font_height, text);
-			if ((menu->selected_entry == i) && (menu->entries[i]->disable_highlight == 0)){
+			if ((menu->selected_entry == i) && (menu->entries[i]->selectable == 1)){ // only highlight selected entry if it's selectable
 				width = SFont_TextWidth(font, text);
 				highlight.x = ((surface->w - width) / 2) - highlight_margin;
 				highlight.y = line * font_height;
@@ -227,7 +242,7 @@ static void display_menu(SDL_Surface *surface, menu_t *menu) {
 				text = menu->entries[i]->text;
 			}
 			SFont_WriteCenter(surface, font, line * font_height, text);
-			if ((menu->selected_entry == i) && (menu->entries[i]->disable_highlight == 0)) {
+			if ((menu->selected_entry == i) && (menu->entries[i]->selectable == 1)){ // only highlight selected entry if it's selectable
 				width = SFont_TextWidth(font, text);
 				highlight.x = ((surface->w - width) / 2) - highlight_margin;
 				highlight.y = line * font_height;
@@ -294,7 +309,7 @@ menu_entry_t *new_menu_entry(int is_shiftable) {
 	entry->entries = NULL;
     entry->text = NULL;
 	entry->is_shiftable = is_shiftable;
-	entry->disable_highlight = 0;
+	entry->selectable = 1;
 	entry->n_entries = 0;
 	entry->selected_entry = 0;
     entry->callback = NULL;

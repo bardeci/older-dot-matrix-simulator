@@ -132,6 +132,11 @@ void main_menu(gambatte::GB *gambatte, BlitterWrapper *blitter) {
     menu_entry_set_text(menu_entry, "Reset game");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_restart;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->selectable = 0;
     
 	menu_entry = new_menu_entry(0);
 	menu_entry_set_text(menu_entry, "Options");
@@ -261,6 +266,11 @@ static void callback_options(menu_t *caller_menu) {
     menu_entry_set_text(menu_entry, "Ghosting");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_ghosting;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->selectable = 0;
 
     menu_entry = new_menu_entry(0); //4
     menu_entry_set_text(menu_entry, "Save settings");
@@ -710,68 +720,58 @@ static void callback_about(menu_t *caller_menu) {
     menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "Gambatte");
     menu_add_entry(menu, menu_entry);
-    menu_entry->disable_highlight = 1;
-    menu_entry->callback = callback_scaler_back;
+    menu_entry->selectable = 0;
 
     menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "by Sindre Aamas");
     menu_add_entry(menu, menu_entry);
-    menu_entry->disable_highlight = 1;
-    menu_entry->callback = callback_scaler_back;
+    menu_entry->selectable = 0;
 
     menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "");
     menu_add_entry(menu, menu_entry);
-    menu_entry->disable_highlight = 1;
+    menu_entry->selectable = 1;
     menu_entry->callback = callback_scaler_back;
 
     menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "GCW Zero port by");
     menu_add_entry(menu, menu_entry);
-    menu_entry->disable_highlight = 1;
-    menu_entry->callback = callback_scaler_back;
+    menu_entry->selectable = 0;
 
     menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "Surkow and Hi-Ban");
     menu_add_entry(menu, menu_entry);
-    menu_entry->disable_highlight = 1;
-    menu_entry->callback = callback_scaler_back;
+    menu_entry->selectable = 0;
 
     menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "");
     menu_add_entry(menu, menu_entry);
-    menu_entry->disable_highlight = 1;
-    menu_entry->callback = callback_scaler_back;
+    menu_entry->selectable = 0;
 
     menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "Gambatte version:");
     menu_add_entry(menu, menu_entry);
-    menu_entry->disable_highlight = 1;
-    menu_entry->callback = callback_scaler_back;
+    menu_entry->selectable = 0;
 
     menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "0.4.1");
     menu_add_entry(menu, menu_entry);
-    menu_entry->disable_highlight = 1;
-    menu_entry->callback = callback_scaler_back;
+    menu_entry->selectable = 0;
 
     menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "");
     menu_add_entry(menu, menu_entry);
-    menu_entry->disable_highlight = 1;
-    menu_entry->callback = callback_scaler_back;
+    menu_entry->selectable = 0;
 
     menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "build version:");
     menu_add_entry(menu, menu_entry);
-    menu_entry->disable_highlight = 1;
-    menu_entry->callback = callback_scaler_back;
+    menu_entry->selectable = 0;
 
     menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, BUILDDATE);
     menu_add_entry(menu, menu_entry);
-    menu_entry->disable_highlight = 1;
-    menu_entry->callback = callback_scaler_back;
+    menu_entry->selectable = 0;
     
     menu_main(menu);
 

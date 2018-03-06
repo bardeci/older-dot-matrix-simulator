@@ -12,6 +12,7 @@
 
 #include <string.h>
 #include <string>
+#include <locale>
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
@@ -75,6 +76,7 @@ static void callback_loadstate(menu_t *caller_menu);
 static void callback_selectstate(menu_t *caller_menu);
 static void callback_restart(menu_t *caller_menu);
 static void callback_options(menu_t *caller_menu);
+static void callback_cheats(menu_t *caller_menu);
 static void callback_about(menu_t *caller_menu);
 static void callback_quit(menu_t *caller_menu);
 
@@ -85,6 +87,9 @@ static void callback_dmgborderimage(menu_t *caller_menu);
 static void callback_gbcborderimage(menu_t *caller_menu);
 static void callback_ghosting(menu_t *caller_menu);
 
+static void callback_gamegenie(menu_t *caller_menu);
+static void callback_gameshark(menu_t *caller_menu);
+
 std::string menu_main_title = ("GAMBATTE-GCWZERO");
 
 gambatte::GB *gambatte_p;
@@ -94,7 +99,6 @@ void main_menu(gambatte::GB *gambatte, BlitterWrapper *blitter) {
     blitter_p = blitter;
     gambatte_p = gambatte;
 
-    //blitter_p->force320x240(); /* force the menu to be at 320x240 screen resolution */
     SDL_EnableKeyRepeat(250, 83);
     init_menusurfaces();
     init_menu();
@@ -142,6 +146,11 @@ void main_menu(gambatte::GB *gambatte, BlitterWrapper *blitter) {
 	menu_entry_set_text(menu_entry, "Options");
 	menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_options;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "Cheats");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->callback = callback_cheats;
 
     menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "About");
@@ -237,32 +246,32 @@ static void callback_options(menu_t *caller_menu) {
     menu_set_title(menu, "Options");
 	menu->back_callback = callback_options_back;
 
-    menu_entry = new_menu_entry(0); //1
+    menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "Show FPS");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_showfps;
 
-    menu_entry = new_menu_entry(0); //1
+    menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "Select Scaler");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_scaler;
 
-    menu_entry = new_menu_entry(0); //2
+    menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "Mono Palette");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_dmgpalette;
 
-    menu_entry = new_menu_entry(0); //3
+    menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "DMG Border");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_dmgborderimage;
 
-    menu_entry = new_menu_entry(0); //3
+    menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "GBC Border");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_gbcborderimage;
 
-    menu_entry = new_menu_entry(0); //3
+    menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "Ghosting");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_ghosting;
@@ -272,12 +281,12 @@ static void callback_options(menu_t *caller_menu) {
     menu_add_entry(menu, menu_entry);
     menu_entry->selectable = 0;
 
-    menu_entry = new_menu_entry(0); //4
+    menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "Save settings");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_saveconfig;
 
-    menu_entry = new_menu_entry(0); //4
+    menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "Back");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_options_back;
@@ -368,37 +377,37 @@ static void callback_scaler(menu_t *caller_menu) {
     menu_entry->callback = callback_selectedscaler;
 
     menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "1.50x (SW)");
+    menu_entry_set_text(menu_entry, "1.50x S");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_selectedscaler;
 
     menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "Fscrn (SW)");
+    menu_entry_set_text(menu_entry, "Fscrn S");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_selectedscaler;
 
     menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "1.25x (HW)");
+    menu_entry_set_text(menu_entry, "1.25x H");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_selectedscaler;
 
     menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "1.36x (HW)");
+    menu_entry_set_text(menu_entry, "1.36x H");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_selectedscaler;
 
     menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "1.50x (HW)");
+    menu_entry_set_text(menu_entry, "1.50x H");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_selectedscaler;
 
     menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "1.66x (HW)");
+    menu_entry_set_text(menu_entry, "1.66x H");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_selectedscaler;
 
     menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "Fscrn (HW)");
+    menu_entry_set_text(menu_entry, "Fscrn H");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_selectedscaler;
 
@@ -725,63 +734,73 @@ static void callback_about(menu_t *caller_menu) {
 
     menu_set_header(menu, menu_main_title.c_str());
     menu_set_title(menu, "About");
-    menu->back_callback = callback_scaler_back;
+    menu->back_callback = callback_about_back;
 
     menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "Gambatte");
     menu_add_entry(menu, menu_entry);
     menu_entry->selectable = 0;
+    menu_entry->callback = callback_about_back;
 
     menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "by Sindre Aamas");
     menu_add_entry(menu, menu_entry);
     menu_entry->selectable = 0;
+    menu_entry->callback = callback_about_back;
 
     menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "");
     menu_add_entry(menu, menu_entry);
-    menu_entry->selectable = 1;
-    menu_entry->callback = callback_scaler_back;
+    menu_entry->selectable = 0;
+    menu_entry->callback = callback_about_back;
 
     menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "GCW Zero port by");
     menu_add_entry(menu, menu_entry);
     menu_entry->selectable = 0;
+    menu_entry->callback = callback_about_back;
 
     menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "Surkow and Hi-Ban");
     menu_add_entry(menu, menu_entry);
     menu_entry->selectable = 0;
+    menu_entry->callback = callback_about_back;
 
     menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "");
     menu_add_entry(menu, menu_entry);
     menu_entry->selectable = 0;
+    menu_entry->callback = callback_about_back;
 
     menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "Gambatte version:");
     menu_add_entry(menu, menu_entry);
     menu_entry->selectable = 0;
+    menu_entry->callback = callback_about_back;
 
     menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "0.4.1");
     menu_add_entry(menu, menu_entry);
     menu_entry->selectable = 0;
+    menu_entry->callback = callback_about_back;
 
     menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "");
     menu_add_entry(menu, menu_entry);
     menu_entry->selectable = 0;
+    menu_entry->callback = callback_about_back;
 
     menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "build version:");
     menu_add_entry(menu, menu_entry);
     menu_entry->selectable = 0;
+    menu_entry->callback = callback_about_back;
 
     menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, BUILDDATE);
     menu_add_entry(menu, menu_entry);
     menu_entry->selectable = 0;
+    menu_entry->callback = callback_about_back;
     
     menu_main(menu);
 
@@ -789,5 +808,506 @@ static void callback_about(menu_t *caller_menu) {
 }
 
 static void callback_about_back(menu_t *caller_menu) {
+    caller_menu->quit = 1;
+}
+
+/* ==================== CHEATS MENU ================================ */
+
+static void callback_cheats_back(menu_t *caller_menu);
+
+static void callback_cheats(menu_t *caller_menu) {
+    menu_t *menu;
+    menu_entry_t *menu_entry;
+    (void) caller_menu;
+    menu = new_menu();
+        
+    menu_set_header(menu, menu_main_title.c_str());
+    menu_set_title(menu, "Cheats");
+    menu->back_callback = callback_cheats_back;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "Game Genie");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->callback = callback_gamegenie;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "Game Shark");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->callback = callback_gameshark;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->selectable = 0;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "Back");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->callback = callback_options_back;
+    
+    menu_main(menu);
+    
+    delete_menu(menu);
+}
+
+static void callback_cheats_back(menu_t *caller_menu) {
+    caller_menu->quit = 1;
+}
+
+/* ==================== GAME GENIE MENU =========================== */
+
+static void callback_apply_gamegenie(menu_t *caller_menu);
+static void callback_gamegenie_back(menu_t *caller_menu);
+
+static void callback_gamegenie(menu_t *caller_menu) {
+
+    menu_t *menu;
+    menu_entry_t *menu_entry;
+    (void) caller_menu;
+    menu = new_menu();
+
+    menu_set_header(menu, menu_main_title.c_str());
+    menu_set_title(menu, "Game Genie");
+    menu->back_callback = callback_gamegenie_back;
+
+// ----------- CHEAT A --------------//
+
+    menu_entry = new_menu_entry(1);
+    menu_entry_set_text(menu_entry, "");
+    menu_add_entry(menu, menu_entry);
+    menu_entry_add_entry(menu_entry, "0");
+    menu_entry_add_entry(menu_entry, "1");
+    menu_entry_add_entry(menu_entry, "2");
+    menu_entry_add_entry(menu_entry, "3");
+    menu_entry_add_entry(menu_entry, "4");
+    menu_entry_add_entry(menu_entry, "5");
+    menu_entry_add_entry(menu_entry, "6");
+    menu_entry_add_entry(menu_entry, "7");
+    menu_entry_add_entry(menu_entry, "8");
+    menu_entry_add_entry(menu_entry, "9");
+    menu_entry_add_entry(menu_entry, "A");
+    menu_entry_add_entry(menu_entry, "B");
+    menu_entry_add_entry(menu_entry, "C");
+    menu_entry_add_entry(menu_entry, "D");
+    menu_entry_add_entry(menu_entry, "E");
+    menu_entry_add_entry(menu_entry, "F");
+    menu_entry->selected_entry = 0;
+    menu_entry->callback = callback_apply_gamegenie;
+
+    menu_entry = new_menu_entry(1);
+    menu_entry_set_text(menu_entry, "");
+    menu_add_entry(menu, menu_entry);
+    menu_entry_add_entry(menu_entry, "0");
+    menu_entry_add_entry(menu_entry, "1");
+    menu_entry_add_entry(menu_entry, "2");
+    menu_entry_add_entry(menu_entry, "3");
+    menu_entry_add_entry(menu_entry, "4");
+    menu_entry_add_entry(menu_entry, "5");
+    menu_entry_add_entry(menu_entry, "6");
+    menu_entry_add_entry(menu_entry, "7");
+    menu_entry_add_entry(menu_entry, "8");
+    menu_entry_add_entry(menu_entry, "9");
+    menu_entry_add_entry(menu_entry, "A");
+    menu_entry_add_entry(menu_entry, "B");
+    menu_entry_add_entry(menu_entry, "C");
+    menu_entry_add_entry(menu_entry, "D");
+    menu_entry_add_entry(menu_entry, "E");
+    menu_entry_add_entry(menu_entry, "F");
+    menu_entry->selected_entry = 0;
+    menu_entry->callback = callback_apply_gamegenie;
+
+    menu_entry = new_menu_entry(1);
+    menu_entry_set_text(menu_entry, "");
+    menu_add_entry(menu, menu_entry);
+    menu_entry_add_entry(menu_entry, "0");
+    menu_entry_add_entry(menu_entry, "1");
+    menu_entry_add_entry(menu_entry, "2");
+    menu_entry_add_entry(menu_entry, "3");
+    menu_entry_add_entry(menu_entry, "4");
+    menu_entry_add_entry(menu_entry, "5");
+    menu_entry_add_entry(menu_entry, "6");
+    menu_entry_add_entry(menu_entry, "7");
+    menu_entry_add_entry(menu_entry, "8");
+    menu_entry_add_entry(menu_entry, "9");
+    menu_entry_add_entry(menu_entry, "A");
+    menu_entry_add_entry(menu_entry, "B");
+    menu_entry_add_entry(menu_entry, "C");
+    menu_entry_add_entry(menu_entry, "D");
+    menu_entry_add_entry(menu_entry, "E");
+    menu_entry_add_entry(menu_entry, "F");
+    menu_entry->selected_entry = 0;
+    menu_entry->callback = callback_apply_gamegenie;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "-");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->selectable = 0;
+
+    menu_entry = new_menu_entry(1);
+    menu_entry_set_text(menu_entry, "");
+    menu_add_entry(menu, menu_entry);
+    menu_entry_add_entry(menu_entry, "0");
+    menu_entry_add_entry(menu_entry, "1");
+    menu_entry_add_entry(menu_entry, "2");
+    menu_entry_add_entry(menu_entry, "3");
+    menu_entry_add_entry(menu_entry, "4");
+    menu_entry_add_entry(menu_entry, "5");
+    menu_entry_add_entry(menu_entry, "6");
+    menu_entry_add_entry(menu_entry, "7");
+    menu_entry_add_entry(menu_entry, "8");
+    menu_entry_add_entry(menu_entry, "9");
+    menu_entry_add_entry(menu_entry, "A");
+    menu_entry_add_entry(menu_entry, "B");
+    menu_entry_add_entry(menu_entry, "C");
+    menu_entry_add_entry(menu_entry, "D");
+    menu_entry_add_entry(menu_entry, "E");
+    menu_entry_add_entry(menu_entry, "F");
+    menu_entry->selected_entry = 0;
+    menu_entry->callback = callback_apply_gamegenie;
+
+    menu_entry = new_menu_entry(1);
+    menu_entry_set_text(menu_entry, "");
+    menu_add_entry(menu, menu_entry);
+    menu_entry_add_entry(menu_entry, "0");
+    menu_entry_add_entry(menu_entry, "1");
+    menu_entry_add_entry(menu_entry, "2");
+    menu_entry_add_entry(menu_entry, "3");
+    menu_entry_add_entry(menu_entry, "4");
+    menu_entry_add_entry(menu_entry, "5");
+    menu_entry_add_entry(menu_entry, "6");
+    menu_entry_add_entry(menu_entry, "7");
+    menu_entry_add_entry(menu_entry, "8");
+    menu_entry_add_entry(menu_entry, "9");
+    menu_entry_add_entry(menu_entry, "A");
+    menu_entry_add_entry(menu_entry, "B");
+    menu_entry_add_entry(menu_entry, "C");
+    menu_entry_add_entry(menu_entry, "D");
+    menu_entry_add_entry(menu_entry, "E");
+    menu_entry_add_entry(menu_entry, "F");
+    menu_entry->selected_entry = 0;
+    menu_entry->callback = callback_apply_gamegenie;
+
+    menu_entry = new_menu_entry(1);
+    menu_entry_set_text(menu_entry, "");
+    menu_add_entry(menu, menu_entry);
+    menu_entry_add_entry(menu_entry, "0");
+    menu_entry_add_entry(menu_entry, "1");
+    menu_entry_add_entry(menu_entry, "2");
+    menu_entry_add_entry(menu_entry, "3");
+    menu_entry_add_entry(menu_entry, "4");
+    menu_entry_add_entry(menu_entry, "5");
+    menu_entry_add_entry(menu_entry, "6");
+    menu_entry_add_entry(menu_entry, "7");
+    menu_entry_add_entry(menu_entry, "8");
+    menu_entry_add_entry(menu_entry, "9");
+    menu_entry_add_entry(menu_entry, "A");
+    menu_entry_add_entry(menu_entry, "B");
+    menu_entry_add_entry(menu_entry, "C");
+    menu_entry_add_entry(menu_entry, "D");
+    menu_entry_add_entry(menu_entry, "E");
+    menu_entry_add_entry(menu_entry, "F");
+    menu_entry->selected_entry = 0;
+    menu_entry->callback = callback_apply_gamegenie;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "-");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->selectable = 0;
+
+    menu_entry = new_menu_entry(1);
+    menu_entry_set_text(menu_entry, "");
+    menu_add_entry(menu, menu_entry);
+    menu_entry_add_entry(menu_entry, "0");
+    menu_entry_add_entry(menu_entry, "1");
+    menu_entry_add_entry(menu_entry, "2");
+    menu_entry_add_entry(menu_entry, "3");
+    menu_entry_add_entry(menu_entry, "4");
+    menu_entry_add_entry(menu_entry, "5");
+    menu_entry_add_entry(menu_entry, "6");
+    menu_entry_add_entry(menu_entry, "7");
+    menu_entry_add_entry(menu_entry, "8");
+    menu_entry_add_entry(menu_entry, "9");
+    menu_entry_add_entry(menu_entry, "A");
+    menu_entry_add_entry(menu_entry, "B");
+    menu_entry_add_entry(menu_entry, "C");
+    menu_entry_add_entry(menu_entry, "D");
+    menu_entry_add_entry(menu_entry, "E");
+    menu_entry_add_entry(menu_entry, "F");
+    menu_entry->selected_entry = 0;
+    menu_entry->callback = callback_apply_gamegenie;
+
+    menu_entry = new_menu_entry(1);
+    menu_entry_set_text(menu_entry, "");
+    menu_add_entry(menu, menu_entry);
+    menu_entry_add_entry(menu_entry, "0");
+    menu_entry_add_entry(menu_entry, "1");
+    menu_entry_add_entry(menu_entry, "2");
+    menu_entry_add_entry(menu_entry, "3");
+    menu_entry_add_entry(menu_entry, "4");
+    menu_entry_add_entry(menu_entry, "5");
+    menu_entry_add_entry(menu_entry, "6");
+    menu_entry_add_entry(menu_entry, "7");
+    menu_entry_add_entry(menu_entry, "8");
+    menu_entry_add_entry(menu_entry, "9");
+    menu_entry_add_entry(menu_entry, "A");
+    menu_entry_add_entry(menu_entry, "B");
+    menu_entry_add_entry(menu_entry, "C");
+    menu_entry_add_entry(menu_entry, "D");
+    menu_entry_add_entry(menu_entry, "E");
+    menu_entry_add_entry(menu_entry, "F");
+    menu_entry->selected_entry = 0;
+    menu_entry->callback = callback_apply_gamegenie;
+
+    menu_entry = new_menu_entry(1);
+    menu_entry_set_text(menu_entry, "");
+    menu_add_entry(menu, menu_entry);
+    menu_entry_add_entry(menu_entry, "0");
+    menu_entry_add_entry(menu_entry, "1");
+    menu_entry_add_entry(menu_entry, "2");
+    menu_entry_add_entry(menu_entry, "3");
+    menu_entry_add_entry(menu_entry, "4");
+    menu_entry_add_entry(menu_entry, "5");
+    menu_entry_add_entry(menu_entry, "6");
+    menu_entry_add_entry(menu_entry, "7");
+    menu_entry_add_entry(menu_entry, "8");
+    menu_entry_add_entry(menu_entry, "9");
+    menu_entry_add_entry(menu_entry, "A");
+    menu_entry_add_entry(menu_entry, "B");
+    menu_entry_add_entry(menu_entry, "C");
+    menu_entry_add_entry(menu_entry, "D");
+    menu_entry_add_entry(menu_entry, "E");
+    menu_entry_add_entry(menu_entry, "F");
+    menu_entry->selected_entry = 0;
+    menu_entry->callback = callback_apply_gamegenie;
+    
+    menu_cheat(menu);
+
+    delete_menu(menu);
+}
+
+std::string numtohextext(int num){
+    std::locale loc;
+    char buffer[4];
+    std::string result;
+    sprintf(buffer, "%x", num);
+
+    result = std::string(buffer);
+    result = std::toupper(buffer[0],loc);
+
+    return result;
+}
+
+static void callback_apply_gamegenie(menu_t *caller_menu) {
+    std::string a1 = "0", a2 = "0", a3 = "0", a4 = "0", a5 = "0", a6 = "0", a7 = "0", a8 = "0", a9 = "0";
+
+    a1 = numtohextext(caller_menu->entries[0]->selected_entry);
+    a2 = numtohextext(caller_menu->entries[1]->selected_entry);
+    a3 = numtohextext(caller_menu->entries[2]->selected_entry);
+    a4 = numtohextext(caller_menu->entries[4]->selected_entry);
+    a5 = numtohextext(caller_menu->entries[5]->selected_entry);
+    a6 = numtohextext(caller_menu->entries[6]->selected_entry);
+    a7 = numtohextext(caller_menu->entries[8]->selected_entry);
+    a8 = numtohextext(caller_menu->entries[9]->selected_entry);
+    a9 = numtohextext(caller_menu->entries[10]->selected_entry);
+
+    std::string cheat_a = a1 + a2 + a3 + "-" + a4 + a5 + a6 + "-" + a7 + a8 + a9 + ";";
+
+    printf("GG Cheat: %s\n", cheat_a.c_str());
+
+    gambatte_p->setGameGenie(cheat_a);
+
+    caller_menu->quit = 1;
+}
+
+static void callback_gamegenie_back(menu_t *caller_menu) {
+    caller_menu->quit = 1;
+}
+
+
+/* ==================== GAME SHARK MENU =========================== */
+
+static void callback_apply_gameshark(menu_t *caller_menu);
+static void callback_gameshark_back(menu_t *caller_menu);
+
+static void callback_gameshark(menu_t *caller_menu) {
+
+    menu_t *menu;
+    menu_entry_t *menu_entry;
+    (void) caller_menu;
+    menu = new_menu();
+
+    menu_set_header(menu, menu_main_title.c_str());
+    menu_set_title(menu, "Game Shark");
+    menu->back_callback = callback_gameshark_back;
+
+// ----------- CHEAT A --------------//
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "0");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->selectable = 0;
+
+    menu_entry = new_menu_entry(0);
+    menu_entry_set_text(menu_entry, "1");
+    menu_add_entry(menu, menu_entry);
+    menu_entry->selectable = 0;
+
+    menu_entry = new_menu_entry(1);
+    menu_entry_set_text(menu_entry, "");
+    menu_add_entry(menu, menu_entry);
+    menu_entry_add_entry(menu_entry, "0");
+    menu_entry_add_entry(menu_entry, "1");
+    menu_entry_add_entry(menu_entry, "2");
+    menu_entry_add_entry(menu_entry, "3");
+    menu_entry_add_entry(menu_entry, "4");
+    menu_entry_add_entry(menu_entry, "5");
+    menu_entry_add_entry(menu_entry, "6");
+    menu_entry_add_entry(menu_entry, "7");
+    menu_entry_add_entry(menu_entry, "8");
+    menu_entry_add_entry(menu_entry, "9");
+    menu_entry_add_entry(menu_entry, "A");
+    menu_entry_add_entry(menu_entry, "B");
+    menu_entry_add_entry(menu_entry, "C");
+    menu_entry_add_entry(menu_entry, "D");
+    menu_entry_add_entry(menu_entry, "E");
+    menu_entry_add_entry(menu_entry, "F");
+    menu_entry->selected_entry = 0;
+    menu_entry->callback = callback_apply_gameshark;
+
+    menu_entry = new_menu_entry(1);
+    menu_entry_set_text(menu_entry, "");
+    menu_add_entry(menu, menu_entry);
+    menu_entry_add_entry(menu_entry, "0");
+    menu_entry_add_entry(menu_entry, "1");
+    menu_entry_add_entry(menu_entry, "2");
+    menu_entry_add_entry(menu_entry, "3");
+    menu_entry_add_entry(menu_entry, "4");
+    menu_entry_add_entry(menu_entry, "5");
+    menu_entry_add_entry(menu_entry, "6");
+    menu_entry_add_entry(menu_entry, "7");
+    menu_entry_add_entry(menu_entry, "8");
+    menu_entry_add_entry(menu_entry, "9");
+    menu_entry_add_entry(menu_entry, "A");
+    menu_entry_add_entry(menu_entry, "B");
+    menu_entry_add_entry(menu_entry, "C");
+    menu_entry_add_entry(menu_entry, "D");
+    menu_entry_add_entry(menu_entry, "E");
+    menu_entry_add_entry(menu_entry, "F");
+    menu_entry->selected_entry = 0;
+    menu_entry->callback = callback_apply_gameshark;
+
+    menu_entry = new_menu_entry(1);
+    menu_entry_set_text(menu_entry, "");
+    menu_add_entry(menu, menu_entry);
+    menu_entry_add_entry(menu_entry, "0");
+    menu_entry_add_entry(menu_entry, "1");
+    menu_entry_add_entry(menu_entry, "2");
+    menu_entry_add_entry(menu_entry, "3");
+    menu_entry_add_entry(menu_entry, "4");
+    menu_entry_add_entry(menu_entry, "5");
+    menu_entry_add_entry(menu_entry, "6");
+    menu_entry_add_entry(menu_entry, "7");
+    menu_entry_add_entry(menu_entry, "8");
+    menu_entry_add_entry(menu_entry, "9");
+    menu_entry_add_entry(menu_entry, "A");
+    menu_entry_add_entry(menu_entry, "B");
+    menu_entry_add_entry(menu_entry, "C");
+    menu_entry_add_entry(menu_entry, "D");
+    menu_entry_add_entry(menu_entry, "E");
+    menu_entry_add_entry(menu_entry, "F");
+    menu_entry->selected_entry = 0;
+    menu_entry->callback = callback_apply_gameshark;
+
+    menu_entry = new_menu_entry(1);
+    menu_entry_set_text(menu_entry, "");
+    menu_add_entry(menu, menu_entry);
+    menu_entry_add_entry(menu_entry, "0");
+    menu_entry_add_entry(menu_entry, "1");
+    menu_entry_add_entry(menu_entry, "2");
+    menu_entry_add_entry(menu_entry, "3");
+    menu_entry_add_entry(menu_entry, "4");
+    menu_entry_add_entry(menu_entry, "5");
+    menu_entry_add_entry(menu_entry, "6");
+    menu_entry_add_entry(menu_entry, "7");
+    menu_entry_add_entry(menu_entry, "8");
+    menu_entry_add_entry(menu_entry, "9");
+    menu_entry_add_entry(menu_entry, "A");
+    menu_entry_add_entry(menu_entry, "B");
+    menu_entry_add_entry(menu_entry, "C");
+    menu_entry_add_entry(menu_entry, "D");
+    menu_entry_add_entry(menu_entry, "E");
+    menu_entry_add_entry(menu_entry, "F");
+    menu_entry->selected_entry = 0;
+    menu_entry->callback = callback_apply_gameshark;
+
+    menu_entry = new_menu_entry(1);
+    menu_entry_set_text(menu_entry, "");
+    menu_add_entry(menu, menu_entry);
+    menu_entry_add_entry(menu_entry, "0");
+    menu_entry_add_entry(menu_entry, "1");
+    menu_entry_add_entry(menu_entry, "2");
+    menu_entry_add_entry(menu_entry, "3");
+    menu_entry_add_entry(menu_entry, "4");
+    menu_entry_add_entry(menu_entry, "5");
+    menu_entry_add_entry(menu_entry, "6");
+    menu_entry_add_entry(menu_entry, "7");
+    menu_entry_add_entry(menu_entry, "8");
+    menu_entry_add_entry(menu_entry, "9");
+    menu_entry_add_entry(menu_entry, "A");
+    menu_entry_add_entry(menu_entry, "B");
+    menu_entry_add_entry(menu_entry, "C");
+    menu_entry_add_entry(menu_entry, "D");
+    menu_entry_add_entry(menu_entry, "E");
+    menu_entry_add_entry(menu_entry, "F");
+    menu_entry->selected_entry = 0;
+    menu_entry->callback = callback_apply_gameshark;
+
+    menu_entry = new_menu_entry(1);
+    menu_entry_set_text(menu_entry, "");
+    menu_add_entry(menu, menu_entry);
+    menu_entry_add_entry(menu_entry, "0");
+    menu_entry_add_entry(menu_entry, "1");
+    menu_entry_add_entry(menu_entry, "2");
+    menu_entry_add_entry(menu_entry, "3");
+    menu_entry_add_entry(menu_entry, "4");
+    menu_entry_add_entry(menu_entry, "5");
+    menu_entry_add_entry(menu_entry, "6");
+    menu_entry_add_entry(menu_entry, "7");
+    menu_entry_add_entry(menu_entry, "8");
+    menu_entry_add_entry(menu_entry, "9");
+    menu_entry_add_entry(menu_entry, "A");
+    menu_entry_add_entry(menu_entry, "B");
+    menu_entry_add_entry(menu_entry, "C");
+    menu_entry_add_entry(menu_entry, "D");
+    menu_entry_add_entry(menu_entry, "E");
+    menu_entry_add_entry(menu_entry, "F");
+    menu_entry->selected_entry = 0;
+    menu_entry->callback = callback_apply_gameshark;
+    
+    menu_cheat(menu);
+
+    delete_menu(menu);
+}
+
+static void callback_apply_gameshark(menu_t *caller_menu) {
+    std::string a1 = "0", a2 = "0", a3 = "0", a4 = "0", a5 = "0", a6 = "0";
+
+    a1 = numtohextext(caller_menu->entries[2]->selected_entry);
+    a2 = numtohextext(caller_menu->entries[3]->selected_entry);
+    a3 = numtohextext(caller_menu->entries[4]->selected_entry);
+    a4 = numtohextext(caller_menu->entries[5]->selected_entry);
+    a5 = numtohextext(caller_menu->entries[6]->selected_entry);
+    a6 = numtohextext(caller_menu->entries[7]->selected_entry);
+
+    std::string cheat_a = "01" + a1 + a2 + a3 + a4 + a5 + a6 + ";";
+
+    printf("GS Cheat: %s\n", cheat_a.c_str());
+
+    gambatte_p->setGameShark(cheat_a);
+
+    caller_menu->quit = 1;
+}
+
+static void callback_gameshark_back(menu_t *caller_menu) {
     caller_menu->quit = 1;
 }

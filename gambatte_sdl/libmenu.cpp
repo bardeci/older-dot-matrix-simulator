@@ -17,7 +17,9 @@
 #include "menu.h"
 
 static void display_menu(SDL_Surface *surface, menu_t *menu);
+static void display_menu_cheat(SDL_Surface *surface, menu_t *menu);
 static void redraw(menu_t *menu);
+static void redraw_cheat(menu_t *menu);
 static void invert_rect(SDL_Surface* surface, SDL_Rect *rect);
 static void put_pixel(SDL_Surface *surface, int x, int y, Uint32 pixel);
 static Uint32 get_pixel(SDL_Surface *surface, int x, int y);
@@ -153,6 +155,112 @@ int menu_main(menu_t *menu) {
 	return menu->selected_entry;
 }
 
+int menu_cheat(menu_t *menu) {
+    SDL_Event event;
+	int dirty, loop;
+	loop = 0;
+	while((menu->entries[menu->selected_entry]->selectable == 0) && (loop < menu->n_entries)) { //ensure we select a selectable entry, if there is any.
+		if (menu->selected_entry < menu->n_entries - 1) {
+			++menu->selected_entry;
+		} else {
+			menu->selected_entry = 0;
+		}
+		loop++;
+	}
+    redraw_cheat(menu);
+	quit_menu = 0;
+    while (menu->quit == 0) {
+        dirty = 0;
+		while (SDL_PollEvent(&event)) {
+			switch (event.type) {
+				case SDL_QUIT:
+					exit(0);
+					break;
+				case SDL_KEYDOWN:
+					switch(event.key.keysym.sym) {
+						case SDLK_LEFT:
+							loop = 0;
+							do {
+								if (menu->selected_entry > 0) {
+									--menu->selected_entry;
+								} else {
+									menu->selected_entry = menu->n_entries - 1;
+								}
+								loop++;
+							} while((menu->entries[menu->selected_entry]->selectable == 0) && (loop < menu->n_entries)); //ensure we select a selectable entry, if there is any.
+							dirty = 1;
+							break;
+						case SDLK_RIGHT:
+							loop = 0;
+							do {
+								if (menu->selected_entry < menu->n_entries - 1) {
+									++menu->selected_entry;
+								} else {
+									menu->selected_entry = 0;
+								}
+								loop++;
+							} while((menu->entries[menu->selected_entry]->selectable == 0) && (loop < menu->n_entries)); //ensure we select a selectable entry, if there is any.
+							dirty = 1;
+							break;
+						case SDLK_DOWN:
+							if (menu->entries[menu->selected_entry]->is_shiftable) {
+								if (menu->entries[menu->selected_entry]->selected_entry > 0) {
+									--menu->entries[menu->selected_entry]->selected_entry;
+									dirty = 1;
+								} else {
+									menu->entries[menu->selected_entry]->selected_entry = menu->entries[menu->selected_entry]->n_entries - 1;
+									dirty = 1;
+								}
+							}				
+							break;
+						case SDLK_UP:
+							if (menu->entries[menu->selected_entry]->is_shiftable) {
+								if (menu->entries[menu->selected_entry]->selected_entry < menu->entries[menu->selected_entry]->n_entries - 1) {
+									++menu->entries[menu->selected_entry]->selected_entry;
+									dirty = 1;
+								} else {
+									menu->entries[menu->selected_entry]->selected_entry = 0;
+									dirty = 1;
+								}
+							}
+							break;
+						case SDLK_RETURN: 	/* start button */
+						case SDLK_LCTRL:	/* A button, being used as 'accept' */
+							if (menu->entries[menu->selected_entry]->callback != NULL) {
+								menu->entries[menu->selected_entry]->callback(menu);
+								redraw_cheat(menu);
+							}
+							break;
+						case SDLK_LALT: /* B button, being used as 'back' */
+							if (menu->back_callback != NULL) {
+								menu->back_callback(menu);
+							}
+							break;
+						default:
+							break;
+					}
+				default:
+					break;
+			}
+		}
+		if (dirty) {
+			redraw_cheat(menu);
+		}
+		SDL_Delay(10);
+	}
+	quit_menu = 0;
+	/* doing this twice is just an ugly hack to get round an 
+	 * opendingux pre-release hardware surfaces bug */
+
+	clear_surface(screen, 0);
+	redraw_cheat(menu);
+	//SDL_Flip(screen);
+	clear_surface(screen, 0);
+	redraw_cheat(menu); // redraw function also flips the screen. delete and restore sdl_flip if problematic
+	//SDL_Flip(screen);
+	
+	return menu->selected_entry;
+}
 
 static void display_menu(SDL_Surface *surface, menu_t *menu) {
     int font_height = SFont_TextHeight(font);
@@ -168,6 +276,7 @@ static void display_menu(SDL_Surface *surface, menu_t *menu) {
     int posend = menu->n_entries;
     int uparrow = 0;
     int downarrow = 0;
+    int num_selectable = 0;
     if(menu->n_entries > linelimit){ // menu scrolling
     	if(menu->selected_entry <= 6){
     		posbegin = 0;
@@ -253,8 +362,69 @@ static void display_menu(SDL_Surface *surface, menu_t *menu) {
 			line++;
 		}
 	}
+	for (i = 0; i < menu->n_entries; i++) {
+		if(menu->entries[i]->selectable == 1){
+			num_selectable++;
+		}
+	}
+	if(num_selectable == 0){
+		SFont_WriteCenter(surface, font, 17 * font_height, "B-Back        A-Back"); // 17 = last line of screen (footer)
+	} else {
+		SFont_WriteCenter(surface, font, 17 * font_height, "B-Back      A-Select"); // 17 = last line of screen (footer)
+	}
+    
+}
 
-    SFont_WriteCenter(surface, font, 17 * font_height, "B-Back      A-Select"); // 17 = last line of screen (footer)
+static void display_menu_cheat(SDL_Surface *surface, menu_t *menu) {
+    int font_height = SFont_TextHeight(font);
+    int font_width = SFont_TextWidth(font, "F");
+    int i;
+    int line = 0, column = 0;
+    int h_offset = 0;
+    SDL_Rect highlight;
+    char *text;
+    char buffer[8];
+
+    const int highlight_margin = 0;
+    paint_titlebar();
+    SFont_WriteCenter(surface, font, (line * font_height), menu->header);
+    line ++;
+    SFont_WriteCenter(surface, font, (line * font_height), menu->title);
+
+    h_offset = (surface->w - (font_width * menu->n_entries)) / 2;
+
+    line += 6;
+    SFont_WriteCenter(surface, font, line * font_height, "Enter code:");
+    line += 3;
+    column = 0;
+	for (i = 0; i < menu->n_entries; i++) {
+		if (menu->entries[i]->is_shiftable) {
+			sprintf(buffer, "%s", menu->entries[i]->entries[menu->entries[i]->selected_entry]);
+			text = buffer;
+		} else {
+			text = menu->entries[i]->text;
+		}
+		SFont_Write(surface, font, (column * font_width) + h_offset, line * font_height, text);
+		if ((menu->selected_entry == i) && (menu->entries[i]->selectable == 1)){ // only highlight selected entry if it's selectable
+			if (menu->entries[i]->is_shiftable) {
+				SFont_Write(surface, font, (column * font_width) + h_offset, (line - 1) * font_height, "{");
+				SFont_Write(surface, font, (column * font_width) + h_offset, (line + 1) * font_height, "}");
+			}
+				highlight.x = (column * font_width) + h_offset - highlight_margin;
+				highlight.y = line * font_height;
+				highlight.w = font_width + (highlight_margin * 2);
+				highlight.h = font_height;
+			invert_rect(surface, &highlight);
+		}
+		if(column >= 10){
+			line += 3;
+			column = 0;
+		} else {
+			column++;
+		}
+	}
+
+    SFont_WriteCenter(surface, font, 17 * font_height, "B-Back       A-Apply"); // 17 = last line of screen (footer)
 }
 
 menu_t *new_menu() {
@@ -654,6 +824,21 @@ static void redraw(menu_t *menu) {
 	}
 		
 	display_menu(menuscreen, menu);
+	blitter_p->scaleMenu();
+	SDL_Flip(screen);
+}
+
+static void redraw_cheat(menu_t *menu) {
+	clear_surface(menuscreen, 0xFFFFFF);
+	if((!gambatte_p->isCgb()) && (dmgbordername != "No border.png")) { // if system is DMG
+		clear_surface(screen, convert_hexcolor(screen, menupalwhite));
+		paint_border(screen);
+	} else if((gambatte_p->isCgb()) && (gbcbordername != "No border.png")) { // if system is GBC
+		clear_surface(screen, 0xFFFFFF);
+		paint_border(screen);
+	}
+		
+	display_menu_cheat(menuscreen, menu);
 	blitter_p->scaleMenu();
 	SDL_Flip(screen);
 }

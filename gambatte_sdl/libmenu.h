@@ -23,7 +23,7 @@ typedef struct {
 	char *text;
 	char **entries;
 	int is_shiftable;
-	int selectable; // test test test
+	int selectable;
 	int n_entries;
 	int selected_entry;
 	void (*callback)(menu_t *);
@@ -50,6 +50,7 @@ extern std::string dmgbordername, gbcbordername, palname, homedir;
 void libmenu_set_screen(SDL_Surface *set_screen);
 void libmenu_set_font(SFont_Font *set_font);
 int menu_main(menu_t *menu);
+int menu_cheat(menu_t *menu);
 void set_active_menu(menu_t *menu);
 menu_t *new_menu();
 void delete_menu(menu_t *menu);

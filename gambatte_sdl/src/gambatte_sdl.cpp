@@ -734,8 +734,7 @@ int GambatteSdl::exec() {
 						switch (e.key.keysym.sym) {
 						case SDLK_BACKSPACE:
 						case SDLK_TAB:
-						case SDLK_SPACE:
-						case SDLK_LSHIFT:
+						case SDLK_HOME:
 							main_menu(&gambatte, &blitter);
 							
 							//return 0;

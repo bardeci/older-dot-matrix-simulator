@@ -38,6 +38,10 @@ int selectedscaler = 0, showfps = 0, ghosting = 1, gameiscgb = 0;
 uint32_t menupalblack = 0x000000, menupaldark = 0x505450, menupallight = 0xA8A8A8, menupalwhite = 0xF8FCF8;
 std::string dmgbordername = "No border.png", gbcbordername = "No border.png", palname = "No palette.png";
 std::string homedir = getenv("HOME");
+int numcodes_gg = NUM_GG_CODES, numcodes_gs = NUM_GS_CODES, selectedcode = 0, editmode = 0, blink = 0;
+int ggcheats[NUM_GG_CODES *9] = {0};
+int gscheats[NUM_GS_CODES *8] = {0};
+int gscheatsenabled[NUM_GS_CODES] = {0};
 
 
 void libmenu_set_screen(SDL_Surface *set_screen) {
@@ -119,7 +123,7 @@ int menu_main(menu_t *menu) {
 							break;
 						case SDLK_RETURN: 	/* start button */
 						case SDLK_LCTRL:	/* A button */
-							if ((menu->entries[menu->selected_entry]->callback != NULL) && (!menu->entries[menu->selected_entry]->is_shiftable)) {
+							if (menu->entries[menu->selected_entry]->callback != NULL) {
 								menu->entries[menu->selected_entry]->callback(menu);
 								redraw(menu);
 							}
@@ -158,6 +162,16 @@ int menu_main(menu_t *menu) {
 int menu_cheat(menu_t *menu) {
     SDL_Event event;
 	int dirty, loop;
+	int i, collimit;
+
+    if (menu->entries[0]->selectable == 2){
+    	collimit = 11; //gamegenie codes
+    } else if (menu->entries[0]->selectable == 1){
+    	collimit = 10; //gameshark codes
+    } else {
+    	collimit = 1; // this should never happen
+    }
+
 	loop = 0;
 	while((menu->entries[menu->selected_entry]->selectable == 0) && (loop < menu->n_entries)) { //ensure we select a selectable entry, if there is any.
 		if (menu->selected_entry < menu->n_entries - 1) {
@@ -179,53 +193,98 @@ int menu_cheat(menu_t *menu) {
 				case SDL_KEYDOWN:
 					switch(event.key.keysym.sym) {
 						case SDLK_LEFT:
-							loop = 0;
-							do {
-								if (menu->selected_entry > 0) {
-									--menu->selected_entry;
-								} else {
-									menu->selected_entry = menu->n_entries - 1;
-								}
-								loop++;
-							} while((menu->entries[menu->selected_entry]->selectable == 0) && (loop < menu->n_entries)); //ensure we select a selectable entry, if there is any.
+							if (editmode == 0){
+								if (collimit == 10){ // gameshark
+									if ((menu->selected_entry % collimit == 0) || (menu->selected_entry == 0)){
+										menu->selected_entry += 2;	
+									} else {
+										menu->selected_entry -= 2;
+									}
+								} else if (collimit == 11){ // gamegenie
+									// do nothing
+								}	
+							} else if (editmode == 1){
+								loop = 0;
+								do {
+									if ((menu->selected_entry % collimit == 0) || (menu->selected_entry == 0)){
+										menu->selected_entry += (collimit -1);
+									} else {
+										--menu->selected_entry;
+									}
+									loop++;
+								} while((menu->entries[menu->selected_entry]->selectable != 2) && (loop < collimit)); //ensure we select a selectable entry, if there is any.
+							}
 							dirty = 1;
 							break;
 						case SDLK_RIGHT:
-							loop = 0;
-							do {
-								if (menu->selected_entry < menu->n_entries - 1) {
-									++menu->selected_entry;
-								} else {
-									menu->selected_entry = 0;
+							if (editmode == 0){
+								if (collimit == 10){ // gameshark
+									if ((menu->selected_entry % collimit == 0) || (menu->selected_entry == 0)){
+										menu->selected_entry += 2;	
+									} else {
+										menu->selected_entry -= 2;
+									}
+								} else if (collimit == 11){ // gamegenie
+									// do nothing
 								}
-								loop++;
-							} while((menu->entries[menu->selected_entry]->selectable == 0) && (loop < menu->n_entries)); //ensure we select a selectable entry, if there is any.
+							} else if (editmode == 1){
+								loop = 0;
+								do {
+									if ((menu->selected_entry + 1) % collimit == 0){
+										menu->selected_entry -= (collimit - 1);	
+									} else {
+										++menu->selected_entry;
+									}
+									loop++;
+								} while((menu->entries[menu->selected_entry]->selectable != 2) && (loop < collimit)); //ensure we select a selectable entry, if there is any.
+							}
+							dirty = 1;
+							break;
+						case SDLK_UP:
+							if (editmode == 0){
+								for (i = 0; i < collimit; i++) { // go up 1 line
+									if (menu->selected_entry > 0) {
+										--menu->selected_entry;
+									} else {
+										menu->selected_entry = menu->n_entries - 1;
+									}
+								}
+							} else if (editmode == 1){
+								if (menu->entries[menu->selected_entry]->is_shiftable) { //cycle entry values forward
+									if (menu->entries[menu->selected_entry]->selected_entry < menu->entries[menu->selected_entry]->n_entries - 1) {
+										++menu->entries[menu->selected_entry]->selected_entry;
+										dirty = 1;
+									} else {
+										menu->entries[menu->selected_entry]->selected_entry = 0;
+										dirty = 1;
+									}
+								}
+							}
 							dirty = 1;
 							break;
 						case SDLK_DOWN:
-							if (menu->entries[menu->selected_entry]->is_shiftable) {
-								if (menu->entries[menu->selected_entry]->selected_entry > 0) {
-									--menu->entries[menu->selected_entry]->selected_entry;
-									dirty = 1;
-								} else {
-									menu->entries[menu->selected_entry]->selected_entry = menu->entries[menu->selected_entry]->n_entries - 1;
-									dirty = 1;
+							if (editmode == 0){
+								for (i = 0; i < collimit; i++) { // go down 1 line
+									if (menu->selected_entry < menu->n_entries - 1) {
+										++menu->selected_entry;
+									} else {
+										menu->selected_entry = 0;
+									}
 								}
-							}				
-							break;
-						case SDLK_UP:
-							if (menu->entries[menu->selected_entry]->is_shiftable) {
-								if (menu->entries[menu->selected_entry]->selected_entry < menu->entries[menu->selected_entry]->n_entries - 1) {
-									++menu->entries[menu->selected_entry]->selected_entry;
-									dirty = 1;
-								} else {
-									menu->entries[menu->selected_entry]->selected_entry = 0;
-									dirty = 1;
+							} else if (editmode == 1){
+								if (menu->entries[menu->selected_entry]->is_shiftable) { //cycle entry values backwards
+									if (menu->entries[menu->selected_entry]->selected_entry > 0) {
+										--menu->entries[menu->selected_entry]->selected_entry;
+										dirty = 1;
+									} else {
+										menu->entries[menu->selected_entry]->selected_entry = menu->entries[menu->selected_entry]->n_entries - 1;
+										dirty = 1;
+									}
 								}
 							}
+							dirty = 1;
 							break;
-						case SDLK_RETURN: 	/* start button */
-						case SDLK_LCTRL:	/* A button, being used as 'accept' */
+						case SDLK_LCTRL: /* A button */
 							if (menu->entries[menu->selected_entry]->callback != NULL) {
 								menu->entries[menu->selected_entry]->callback(menu);
 								redraw_cheat(menu);
@@ -235,6 +294,16 @@ int menu_cheat(menu_t *menu) {
 							if (menu->back_callback != NULL) {
 								menu->back_callback(menu);
 							}
+							dirty = 1;
+							break;
+						case SDLK_RETURN: 	/* start button - Apply*/
+							if (collimit == 11){ // if gamegenie
+								if (menu->entries[menu->n_entries -1]->callback != NULL) {
+									menu->entries[menu->n_entries -1]->callback(menu);
+									redraw_cheat(menu);
+								}
+							}
+							
 							break;
 						default:
 							break;
@@ -243,7 +312,13 @@ int menu_cheat(menu_t *menu) {
 					break;
 			}
 		}
-		if (dirty) {
+		if(blink < BLINK_SPEED){ // for blinking animation
+			blink++;
+		}else if (blink == BLINK_SPEED){
+			blink = 0;
+		}
+
+		if ((dirty) || ((editmode == 1) && ((blink == 0) || (blink == floor(BLINK_SPEED * 3 / 4))))) {
 			redraw_cheat(menu);
 		}
 		SDL_Delay(10);
@@ -277,21 +352,44 @@ static void display_menu(SDL_Surface *surface, menu_t *menu) {
     int uparrow = 0;
     int downarrow = 0;
     int num_selectable = 0;
-    if(menu->n_entries > linelimit){ // menu scrolling
-    	if(menu->selected_entry <= 6){
+
+    if((menu->n_entries > linelimit) && (linelimit % 2 != 0)){ // menu scrolling, line limit is not multiple of 2
+    	if(menu->selected_entry <= floor(linelimit / 2)){
     		posbegin = 0;
     		posend = posbegin + linelimit;
     		uparrow = 0;
     		downarrow = 1;
-    	} else if(menu->selected_entry > 6){
-    		if((menu->selected_entry + 6) < menu->n_entries){
-    			posbegin = menu->selected_entry - 6;
-    			posend = menu->selected_entry + 7;
+    	} else if(menu->selected_entry > floor(linelimit / 2)){
+    		if((menu->selected_entry + floor(linelimit / 2)) < menu->n_entries){
+    			posbegin = menu->selected_entry - floor(linelimit / 2);
+    			posend = menu->selected_entry + floor(linelimit / 2) + 1;
     		} else {
     			posbegin = menu->n_entries - linelimit;
     			posend = menu->n_entries;
     		}
-    		if((menu->selected_entry + 7) < menu->n_entries){
+    		if((menu->selected_entry + floor(linelimit / 2) + 1) < menu->n_entries){
+    			uparrow = 1;
+    			downarrow = 1;
+    		} else {
+    			uparrow = 1;
+    			downarrow = 0;
+    		}
+    	}
+    } else if((menu->n_entries > linelimit) && (linelimit % 2 == 0)){ // menu scrolling, line limit is multiple of 2
+    	if(menu->selected_entry <= floor(linelimit / 2)){
+    		posbegin = 0;
+    		posend = posbegin + linelimit;
+    		uparrow = 0;
+    		downarrow = 1;
+    	} else if(menu->selected_entry > floor(linelimit / 2)){
+    		if((menu->selected_entry + floor(linelimit / 2)) < menu->n_entries){
+    			posbegin = menu->selected_entry - floor(linelimit / 2);
+    			posend = menu->selected_entry + floor(linelimit / 2);
+    		} else {
+    			posbegin = menu->n_entries - linelimit;
+    			posend = menu->n_entries;
+    		}
+    		if((menu->selected_entry + floor(linelimit / 2)) < menu->n_entries){
     			uparrow = 1;
     			downarrow = 1;
     		} else {
@@ -303,128 +401,266 @@ static void display_menu(SDL_Surface *surface, menu_t *menu) {
     	uparrow = 0;
     	downarrow = 0;
     }
+
     const int highlight_margin = 0;
     paint_titlebar();
     SFont_WriteCenter(surface, font, (line * font_height), menu->header);
     line ++;
     SFont_WriteCenter(surface, font, (line * font_height), menu->title);
 
-    if(menu->n_entries >= linelimit){ // menu items fill entire screen, do not require centering
-	    if(uparrow == 1){
-	    	line ++;
-	    	SFont_WriteCenter(surface, font, line * font_height, "{"); // up arrow
-	    	line ++;
-	    } else {
-	    	line += 2;
-	    }
-		for (i = posbegin; i < posend; i++) {
-			if (menu->entries[i]->is_shiftable) {
-				sprintf(buffer, "%s: <%s>", menu->entries[i]->text, menu->entries[i]->entries[menu->entries[i]->selected_entry]);
-				text = buffer;
-			} else {
-				text = menu->entries[i]->text;
-			}
-			SFont_WriteCenter(surface, font, line * font_height, text);
-			if ((menu->selected_entry == i) && (menu->entries[i]->selectable == 1)){ // only highlight selected entry if it's selectable
-				width = SFont_TextWidth(font, text);
-				highlight.x = ((surface->w - width) / 2) - highlight_margin;
-				highlight.y = line * font_height;
-				highlight.w = width + (highlight_margin * 2);
-				highlight.h = font_height;
-				invert_rect(surface, &highlight);
-			}
-			line++;
-		}
-		if(downarrow == 1){
-	    	SFont_WriteCenter(surface, font, line * font_height, "}"); // down arrow
-	    }
-	} else { // few menu items, require centering
+    if(uparrow == 1){
+    	line ++;
+    	SFont_WriteCenter(surface, font, line * font_height, "{"); // up arrow
+    	line ++;
+    } else {
+    	line += 2;
+    }
 
+    if(menu->n_entries < linelimit){ // few menu items, require centering
 		int posoffset = floor((linelimit - menu->n_entries) / 2);
-		line += 2;
 		line += posoffset;
-		for (i = posbegin; i < posend; i++) {
-			if (menu->entries[i]->is_shiftable) {
-				sprintf(buffer, "%s: <%s>", menu->entries[i]->text, menu->entries[i]->entries[menu->entries[i]->selected_entry]);
-				text = buffer;
-			} else {
-				text = menu->entries[i]->text;
-			}
-			SFont_WriteCenter(surface, font, line * font_height, text);
-			if ((menu->selected_entry == i) && (menu->entries[i]->selectable == 1)){ // only highlight selected entry if it's selectable
-				width = SFont_TextWidth(font, text);
-				highlight.x = ((surface->w - width) / 2) - highlight_margin;
-				highlight.y = line * font_height;
-				highlight.w = width + (highlight_margin * 2);
-				highlight.h = font_height;
-				invert_rect(surface, &highlight);
-			}
-			line++;
-		}
 	}
+
+	for (i = posbegin; i < posend; i++) {
+		if (menu->entries[i]->is_shiftable) {
+			sprintf(buffer, "%s <%s>", menu->entries[i]->text, menu->entries[i]->entries[menu->entries[i]->selected_entry]);
+			text = buffer;
+		} else {
+			text = menu->entries[i]->text;
+		}
+		SFont_WriteCenter(surface, font, line * font_height, text);
+		if ((menu->selected_entry == i) && (menu->entries[i]->selectable == 1)){ // only highlight selected entry if it's selectable
+			width = SFont_TextWidth(font, text);
+			highlight.x = ((surface->w - width) / 2) - highlight_margin;
+			highlight.y = line * font_height;
+			highlight.w = width + (highlight_margin * 2);
+			highlight.h = font_height;
+			invert_rect(surface, &highlight);
+		}
+		line++;
+	}
+
+	if(downarrow == 1){
+	    SFont_WriteCenter(surface, font, line * font_height, "}"); // down arrow
+	}
+
 	for (i = 0; i < menu->n_entries; i++) {
 		if(menu->entries[i]->selectable == 1){
-			num_selectable++;
+			num_selectable++; // count num of selectable entries
 		}
 	}
-	if(num_selectable == 0){
-		SFont_WriteCenter(surface, font, 17 * font_height, "B-Back        A-Back"); // 17 = last line of screen (footer)
+	if((num_selectable == 0) && (menu->n_entries == 1)){
+		SFont_WriteCenter(surface, font, 17 * font_height, "B-Cancel     Apply-A"); // footer while in confirmation screen
+	} else if (num_selectable == 0){
+		SFont_WriteCenter(surface, font, 17 * font_height, "B-Back        Back-A"); // footer while in "About" screen
 	} else {
-		SFont_WriteCenter(surface, font, 17 * font_height, "B-Back      A-Select"); // 17 = last line of screen (footer)
+		SFont_WriteCenter(surface, font, 17 * font_height, "B-Back      Select-A"); // footer in normal menus
 	}
-    
 }
 
 static void display_menu_cheat(SDL_Surface *surface, menu_t *menu) {
     int font_height = SFont_TextHeight(font);
     int font_width = SFont_TextWidth(font, "F");
-    int i;
+    int i, j, collimit, numcodes, currcode;
     int line = 0, column = 0;
     int h_offset = 0;
-    SDL_Rect highlight;
+    SDL_Rect linehighlight, highlight;
     char *text;
-    char buffer[8];
+    int width;
+    std::string totaltext;
+    char buffer[32];
+    int linelimit = 13;
+    int posbegin = 0;
+    int posend = 1;
+    int uparrow = 0;
+    int downarrow = 0;
+    uint32_t hlcolor;
+
+    if (menu->entries[0]->selectable == 2){
+    	collimit = 11; //gamegenie codes
+    } else if (menu->entries[0]->selectable == 1){
+    	collimit = 10; //gameshark codes
+    } else {
+    	collimit = 1; // this should never happen
+    }
+
+    numcodes = floor(menu->n_entries / collimit);
+    currcode = floor(menu->selected_entry / collimit);
+
+    if((numcodes > linelimit) && (linelimit % 2 != 0)){ // menu scrolling, line limit is not multiple of 2
+    	if(currcode <= floor(linelimit / 2)){
+    		posbegin = 0;
+    		posend = posbegin + linelimit;
+    		uparrow = 0;
+    		downarrow = 1;
+    	} else if(currcode > floor(linelimit / 2)){
+    		if((currcode + floor(linelimit / 2)) < numcodes){
+    			posbegin = currcode - floor(linelimit / 2);
+    			posend = currcode + floor(linelimit / 2) + 1;
+    		} else {
+    			posbegin = numcodes - linelimit;
+    			posend = numcodes;
+    		}
+    		if((currcode + floor(linelimit / 2) + 1) < numcodes){
+    			uparrow = 1;
+    			downarrow = 1;
+    		} else {
+    			uparrow = 1;
+    			downarrow = 0;
+    		}
+    	}
+    } else if((numcodes > linelimit) && (linelimit % 2 == 0)){ // menu scrolling, line limit is multiple of 2
+    	if(currcode <= floor(linelimit / 2)){
+    		posbegin = 0;
+    		posend = posbegin + linelimit;
+    		uparrow = 0;
+    		downarrow = 1;
+    	} else if(currcode > floor(linelimit / 2)){
+    		if((currcode + floor(linelimit / 2)) < numcodes){
+    			posbegin = currcode - floor(linelimit / 2);
+    			posend = currcode + floor(linelimit / 2);
+    		} else {
+    			posbegin = numcodes - linelimit;
+    			posend = numcodes;
+    		}
+    		if((currcode + floor(linelimit / 2)) < numcodes){
+    			uparrow = 1;
+    			downarrow = 1;
+    		} else {
+    			uparrow = 1;
+    			downarrow = 0;
+    		}
+    	}
+    } else {
+    	posbegin = 0;
+    	posend = numcodes;
+    	uparrow = 0;
+    	downarrow = 0;
+    }
 
     const int highlight_margin = 0;
     paint_titlebar();
     SFont_WriteCenter(surface, font, (line * font_height), menu->header);
     line ++;
-    SFont_WriteCenter(surface, font, (line * font_height), menu->title);
+    if(editmode == 1){
+    	SFont_WriteCenter(surface, font, (line * font_height), "Edit Code");
+    } else {
+    	SFont_WriteCenter(surface, font, (line * font_height), menu->title);
+    }
+    
 
-    h_offset = (surface->w - (font_width * menu->n_entries)) / 2;
+    if(uparrow == 1){
+    	line ++;
+    	SFont_WriteCenter(surface, font, line * font_height, "{"); // up arrow
+    	line ++;
+    } else {
+    	line += 2;
+    }
 
-    line += 6;
-    SFont_WriteCenter(surface, font, line * font_height, "Enter code:");
-    line += 3;
-    column = 0;
-	for (i = 0; i < menu->n_entries; i++) {
-		if (menu->entries[i]->is_shiftable) {
-			sprintf(buffer, "%s", menu->entries[i]->entries[menu->entries[i]->selected_entry]);
-			text = buffer;
-		} else {
-			text = menu->entries[i]->text;
-		}
-		SFont_Write(surface, font, (column * font_width) + h_offset, line * font_height, text);
-		if ((menu->selected_entry == i) && (menu->entries[i]->selectable == 1)){ // only highlight selected entry if it's selectable
-			if (menu->entries[i]->is_shiftable) {
-				SFont_Write(surface, font, (column * font_width) + h_offset, (line - 1) * font_height, "{");
-				SFont_Write(surface, font, (column * font_width) + h_offset, (line + 1) * font_height, "}");
-			}
-				highlight.x = (column * font_width) + h_offset - highlight_margin;
-				highlight.y = line * font_height;
-				highlight.w = font_width + (highlight_margin * 2);
-				highlight.h = font_height;
-			invert_rect(surface, &highlight);
-		}
-		if(column >= 10){
-			line += 3;
-			column = 0;
-		} else {
-			column++;
-		}
+    if(numcodes < linelimit){ // few menu items, require centering
+		int posoffset = floor((linelimit - numcodes) / 2);
+		line += posoffset;
 	}
 
-    SFont_WriteCenter(surface, font, 17 * font_height, "B-Back       A-Apply"); // 17 = last line of screen (footer)
+	column = 0;
+
+	for (i = (posbegin * collimit); i < (posend * collimit); i += collimit) {
+
+		j = i;
+		column = 0;
+		totaltext = "";
+
+		for (j = 0; j < collimit; j++){
+			if (menu->entries[i + j]->is_shiftable) {
+				sprintf(buffer, "%s", menu->entries[i + j]->entries[menu->entries[i + j]->selected_entry]);
+				text = buffer;
+			} else {
+				text = menu->entries[i + j]->text;
+			}
+			totaltext += std::string(text);
+		}
+		h_offset = (surface->w - (font_width * totaltext.length())) / 2;
+
+		for (j = 0; j < collimit; j++){
+			if (menu->entries[i + j]->is_shiftable) {
+				sprintf(buffer, "%s", menu->entries[i + j]->entries[menu->entries[i + j]->selected_entry]);
+				text = buffer;
+			} else {
+				text = menu->entries[i + j]->text;
+			}
+			totaltext = std::string(text);
+			
+			if ((menu->selected_entry == i + j) && (menu->entries[i + j]->selectable != 0)){ // only highlight selected entry if it's selectable
+				width = SFont_TextWidth(font, text);
+				highlight.x = (column * font_width) + h_offset - highlight_margin;
+				highlight.y = line * font_height;
+				if ((editmode == 0) && (collimit == 10) && ((i + j ) % 10 == 0)){ //gameshark, checkmark selected
+					highlight.w = width + (highlight_margin * 2);
+				} else if ((editmode == 0) && (collimit == 10) && ((i + j ) % 10 != 0)){ //gameshark, code selected
+					highlight.w = (width * 8) + (highlight_margin * 2);
+				} else if ((editmode == 0) && (collimit == 11) && ((i + j ) % 11 == 0)){ //gamegenie, code selected
+					highlight.w = (width * 11) + (highlight_margin * 2);
+				} else {
+					highlight.w = width + (highlight_margin * 2);
+				}
+				highlight.h = font_height;
+			}
+			
+			SFont_Write(surface, font, (column * font_width) + h_offset, line * font_height, text);
+			column += totaltext.length();
+		}
+
+		if ((editmode == 1) && (collimit == 10) && (blink >= floor(BLINK_SPEED * 3 / 4))) { // blink the whole code while in edit mode. - gameshark
+			for (j = 0; j < collimit; j++){
+				if ((menu->selected_entry == (i + j)) && (menu->entries[i + j]->selectable == 2)){
+
+					column = 0;
+					hlcolor = SDL_MapRGB(surface->format, 255, 255, 255);
+					linehighlight.x = ((column + 4) * font_width) + h_offset - highlight_margin;
+					linehighlight.y = line * font_height;
+					linehighlight.w = (font_width * 8) + (highlight_margin * 2);
+					linehighlight.h = font_height;
+					SDL_FillRect(surface, &linehighlight, hlcolor);
+
+					break;
+				}
+			}
+		} else if ((editmode == 1) && (collimit == 11) && (blink >= floor(BLINK_SPEED * 3 / 4))) { // blink the whole code while in edit mode. - gamegenie
+			for (j = 0; j < collimit; j++){
+				if ((menu->selected_entry == (i + j)) && (menu->entries[i + j]->selectable == 2)){
+
+					column = 0;
+					hlcolor = SDL_MapRGB(surface->format, 255, 255, 255);
+					linehighlight.x = (column * font_width) + h_offset - highlight_margin;
+					linehighlight.y = line * font_height;
+					linehighlight.w = (font_width * 11) + (highlight_margin * 2);
+					linehighlight.h = font_height;
+					SDL_FillRect(surface, &linehighlight, hlcolor);
+
+					break;
+				}
+			}
+		}
+
+		line++;
+	}
+	if((editmode == 1) && (blink < floor(BLINK_SPEED * 3 / 4))){
+		invert_rect(surface, &highlight); //draw invert rect on top of selected code/digit.
+	} else if (editmode == 0){
+		invert_rect(surface, &highlight); //draw invert rect on top of selected code/digit.
+	}
+
+	if(downarrow == 1){
+	    SFont_WriteCenter(surface, font, line * font_height, "}"); // down arrow
+	}
+
+	if(editmode == 1){
+		SFont_WriteCenter(surface, font, 17 * font_height, "B-Cancel     Apply-A"); // footer while in edit mode
+	} else if ((collimit == 10) && (menu->selected_entry % 10 == 0)){
+		SFont_WriteCenter(surface, font, 17 * font_height, "B-Back      Toggle-A"); // footer while highlighting a toggle option in gameshark menu
+	} else {
+		SFont_WriteCenter(surface, font, 17 * font_height, "B-Back        Edit-A"); // footer while highlighting a cheat code
+	}
 }
 
 menu_t *new_menu() {

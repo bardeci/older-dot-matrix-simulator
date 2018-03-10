@@ -7,7 +7,6 @@
 #include "builddate.h"
 
 #include "libmenu.h"
-#include "font12px.h"
 #include "sfont_gameboy.h"
 
 #include <string.h>
@@ -16,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
+#include <math.h>
 
 
 static SDL_Surface *screen;
@@ -68,6 +68,60 @@ void menu_set_screen(SDL_Surface *set_screen) {
 	libmenu_set_screen(screen);
 }
 
+void show_fps(SDL_Surface *surface, int fps) {
+    char buffer[64];
+    sprintf(buffer, "%d", fps);
+    if (showfps) {
+        SFont_Write(surface, font, 0, 0, buffer);
+    }
+}
+
+std::string numtohextext(int num){
+    std::locale loc;
+    char buffer[4];
+    std::string result;
+    sprintf(buffer, "%x", num);
+
+    result = std::string(buffer);
+    result = std::toupper(buffer[0],loc);
+
+    return result;
+}
+
+static int parse_ext_pal(const struct dirent *dir) {
+    if(!dir){
+        return 0;
+    }
+
+    if(dir->d_type == DT_REG) {
+        const char *ext = strrchr(dir->d_name,'.');
+        if((!ext) || (ext == dir->d_name)) {
+            return 0;
+        } else {
+            if(strcmp(ext, ".pal") == 0){
+                return 1;
+            }
+        }
+    }
+}
+
+static int parse_ext_png(const struct dirent *dir) {
+    if(!dir){
+        return 0;
+    }
+
+    if(dir->d_type == DT_REG) {
+        const char *ext = strrchr(dir->d_name,'.');
+        if((!ext) || (ext == dir->d_name)) {
+            return 0;
+        } else {
+            if(strcmp(ext, ".png") == 0){
+                return 1;
+            }
+        }
+    }
+}
+
 /* ============================ MAIN MENU =========================== */
 
 static void callback_return(menu_t *caller_menu);
@@ -89,6 +143,7 @@ static void callback_ghosting(menu_t *caller_menu);
 
 static void callback_gamegenie(menu_t *caller_menu);
 static void callback_gameshark(menu_t *caller_menu);
+
 
 std::string menu_main_title = ("GAMBATTE-GCWZERO");
 
@@ -305,14 +360,6 @@ static void callback_options_back(menu_t *caller_menu) {
     caller_menu->quit = 1;
 }
 
-void show_fps(SDL_Surface *surface, int fps) {
-	char buffer[64];
-	sprintf(buffer, "%d", fps);
-	if (showfps) {
-		SFont_Write(surface, font, 0, 0, buffer);
-	}
-}
-
 /* ==================== SHOW FPS MENU =========================== */
 
 static void callback_selectedshowfps(menu_t *caller_menu);
@@ -377,37 +424,37 @@ static void callback_scaler(menu_t *caller_menu) {
     menu_entry->callback = callback_selectedscaler;
 
     menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "1.50x S");
+    menu_entry_set_text(menu_entry, "Sw 1.50x");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_selectedscaler;
 
     menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "Fscrn S");
+    menu_entry_set_text(menu_entry, "Sw Fullscr");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_selectedscaler;
 
     menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "1.25x H");
+    menu_entry_set_text(menu_entry, "Hw 1.25x");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_selectedscaler;
 
     menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "1.36x H");
+    menu_entry_set_text(menu_entry, "Hw 1.36x");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_selectedscaler;
 
     menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "1.50x H");
+    menu_entry_set_text(menu_entry, "Hw 1.50x");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_selectedscaler;
 
     menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "1.66x H");
+    menu_entry_set_text(menu_entry, "Hw 1.66x");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_selectedscaler;
 
     menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "Fscrn H");
+    menu_entry_set_text(menu_entry, "Hw Fullscr");
     menu_add_entry(menu, menu_entry);
     menu_entry->callback = callback_selectedscaler;
 
@@ -436,7 +483,6 @@ int numpalettes;
 static void callback_nopalette(menu_t *caller_menu);
 static void callback_selectedpalette(menu_t *caller_menu);
 static void callback_dmgpalette_back(menu_t *caller_menu);
-static int parse_ext_pal(const struct dirent *dir);
 
 static void callback_dmgpalette(menu_t *caller_menu) {
 
@@ -478,21 +524,6 @@ static void callback_dmgpalette(menu_t *caller_menu) {
     free(palettelist);
 }
 
-static int parse_ext_pal(const struct dirent *dir) {
-    if(!dir)
-        return 0;
-
-    if(dir->d_type == DT_REG) {
-        const char *ext = strrchr(dir->d_name,'.');
-        if((!ext) || (ext == dir->d_name)) {
-            return 0;
-        } else {
-            if(strcmp(ext, ".pal") == 0)
-                return 1;
-        }
-    }
-}
-
 static void callback_nopalette(menu_t *caller_menu) {
     Uint32 value;
     for (int i = 0; i < 3; ++i) {
@@ -532,7 +563,6 @@ int numdmgborders;
 static void callback_nodmgborder(menu_t *caller_menu);
 static void callback_selecteddmgborder(menu_t *caller_menu);
 static void callback_dmgborderimage_back(menu_t *caller_menu);
-static int parse_ext_png(const struct dirent *dir);
 
 static void callback_dmgborderimage(menu_t *caller_menu) {
 
@@ -572,21 +602,6 @@ static void callback_dmgborderimage(menu_t *caller_menu) {
         free(dmgborderlist[i]);
     }
     free(dmgborderlist);
-}
-
-static int parse_ext_png(const struct dirent *dir) {
-    if(!dir)
-        return 0;
-
-    if(dir->d_type == DT_REG) {
-        const char *ext = strrchr(dir->d_name,'.');
-        if((!ext) || (ext == dir->d_name)) {
-            return 0;
-        } else {
-            if(strcmp(ext, ".png") == 0)
-                return 1;
-        }
-    }
 }
 
 static void callback_nodmgborder(menu_t *caller_menu) {
@@ -843,7 +858,7 @@ static void callback_cheats(menu_t *caller_menu) {
     menu_entry = new_menu_entry(0);
     menu_entry_set_text(menu_entry, "Back");
     menu_add_entry(menu, menu_entry);
-    menu_entry->callback = callback_options_back;
+    menu_entry->callback = callback_cheats_back;
     
     menu_main(menu);
     
@@ -854,12 +869,16 @@ static void callback_cheats_back(menu_t *caller_menu) {
     caller_menu->quit = 1;
 }
 
-/* ==================== GAME GENIE MENU =========================== */
+/* ==================== GAME GENIE MENU ================================ */
 
-static void callback_apply_gamegenie(menu_t *caller_menu);
+static void callback_gamegenie_confirm(menu_t *caller_menu);
+static void callback_gamegenie_apply(menu_t *caller_menu);
+static void callback_gamegenie_edit(menu_t *caller_menu);
 static void callback_gamegenie_back(menu_t *caller_menu);
 
 static void callback_gamegenie(menu_t *caller_menu) {
+
+    int i, j, offset, offset2;
 
     menu_t *menu;
     menu_entry_t *menu_entry;
@@ -870,266 +889,306 @@ static void callback_gamegenie(menu_t *caller_menu) {
     menu_set_title(menu, "Game Genie");
     menu->back_callback = callback_gamegenie_back;
 
-// ----------- CHEAT A --------------//
+    for (i = 0; i < numcodes_gg; i++) {
 
-    menu_entry = new_menu_entry(1);
-    menu_entry_set_text(menu_entry, "");
-    menu_add_entry(menu, menu_entry);
-    menu_entry_add_entry(menu_entry, "0");
-    menu_entry_add_entry(menu_entry, "1");
-    menu_entry_add_entry(menu_entry, "2");
-    menu_entry_add_entry(menu_entry, "3");
-    menu_entry_add_entry(menu_entry, "4");
-    menu_entry_add_entry(menu_entry, "5");
-    menu_entry_add_entry(menu_entry, "6");
-    menu_entry_add_entry(menu_entry, "7");
-    menu_entry_add_entry(menu_entry, "8");
-    menu_entry_add_entry(menu_entry, "9");
-    menu_entry_add_entry(menu_entry, "A");
-    menu_entry_add_entry(menu_entry, "B");
-    menu_entry_add_entry(menu_entry, "C");
-    menu_entry_add_entry(menu_entry, "D");
-    menu_entry_add_entry(menu_entry, "E");
-    menu_entry_add_entry(menu_entry, "F");
-    menu_entry->selected_entry = 0;
-    menu_entry->callback = callback_apply_gamegenie;
+        for (j = 0; j < 3; j++) {
+            menu_entry = new_menu_entry(1);
+            menu_entry_set_text(menu_entry, "");
+            menu_add_entry(menu, menu_entry);
+            menu_entry_add_entry(menu_entry, "0");
+            menu_entry_add_entry(menu_entry, "1");
+            menu_entry_add_entry(menu_entry, "2");
+            menu_entry_add_entry(menu_entry, "3");
+            menu_entry_add_entry(menu_entry, "4");
+            menu_entry_add_entry(menu_entry, "5");
+            menu_entry_add_entry(menu_entry, "6");
+            menu_entry_add_entry(menu_entry, "7");
+            menu_entry_add_entry(menu_entry, "8");
+            menu_entry_add_entry(menu_entry, "9");
+            menu_entry_add_entry(menu_entry, "A");
+            menu_entry_add_entry(menu_entry, "B");
+            menu_entry_add_entry(menu_entry, "C");
+            menu_entry_add_entry(menu_entry, "D");
+            menu_entry_add_entry(menu_entry, "E");
+            menu_entry_add_entry(menu_entry, "F");
+            menu_entry->selected_entry = 0;
+            menu_entry->selectable = 2;
+            menu_entry->callback = callback_gamegenie_edit;
+        }
 
-    menu_entry = new_menu_entry(1);
-    menu_entry_set_text(menu_entry, "");
-    menu_add_entry(menu, menu_entry);
-    menu_entry_add_entry(menu_entry, "0");
-    menu_entry_add_entry(menu_entry, "1");
-    menu_entry_add_entry(menu_entry, "2");
-    menu_entry_add_entry(menu_entry, "3");
-    menu_entry_add_entry(menu_entry, "4");
-    menu_entry_add_entry(menu_entry, "5");
-    menu_entry_add_entry(menu_entry, "6");
-    menu_entry_add_entry(menu_entry, "7");
-    menu_entry_add_entry(menu_entry, "8");
-    menu_entry_add_entry(menu_entry, "9");
-    menu_entry_add_entry(menu_entry, "A");
-    menu_entry_add_entry(menu_entry, "B");
-    menu_entry_add_entry(menu_entry, "C");
-    menu_entry_add_entry(menu_entry, "D");
-    menu_entry_add_entry(menu_entry, "E");
-    menu_entry_add_entry(menu_entry, "F");
-    menu_entry->selected_entry = 0;
-    menu_entry->callback = callback_apply_gamegenie;
+        menu_entry = new_menu_entry(0);
+        menu_entry_set_text(menu_entry, "-");
+        menu_add_entry(menu, menu_entry);
+        menu_entry->selectable = 0;
 
-    menu_entry = new_menu_entry(1);
-    menu_entry_set_text(menu_entry, "");
-    menu_add_entry(menu, menu_entry);
-    menu_entry_add_entry(menu_entry, "0");
-    menu_entry_add_entry(menu_entry, "1");
-    menu_entry_add_entry(menu_entry, "2");
-    menu_entry_add_entry(menu_entry, "3");
-    menu_entry_add_entry(menu_entry, "4");
-    menu_entry_add_entry(menu_entry, "5");
-    menu_entry_add_entry(menu_entry, "6");
-    menu_entry_add_entry(menu_entry, "7");
-    menu_entry_add_entry(menu_entry, "8");
-    menu_entry_add_entry(menu_entry, "9");
-    menu_entry_add_entry(menu_entry, "A");
-    menu_entry_add_entry(menu_entry, "B");
-    menu_entry_add_entry(menu_entry, "C");
-    menu_entry_add_entry(menu_entry, "D");
-    menu_entry_add_entry(menu_entry, "E");
-    menu_entry_add_entry(menu_entry, "F");
-    menu_entry->selected_entry = 0;
-    menu_entry->callback = callback_apply_gamegenie;
+        for (j = 0; j < 3; j++) {
+            menu_entry = new_menu_entry(1);
+            menu_entry_set_text(menu_entry, "");
+            menu_add_entry(menu, menu_entry);
+            menu_entry_add_entry(menu_entry, "0");
+            menu_entry_add_entry(menu_entry, "1");
+            menu_entry_add_entry(menu_entry, "2");
+            menu_entry_add_entry(menu_entry, "3");
+            menu_entry_add_entry(menu_entry, "4");
+            menu_entry_add_entry(menu_entry, "5");
+            menu_entry_add_entry(menu_entry, "6");
+            menu_entry_add_entry(menu_entry, "7");
+            menu_entry_add_entry(menu_entry, "8");
+            menu_entry_add_entry(menu_entry, "9");
+            menu_entry_add_entry(menu_entry, "A");
+            menu_entry_add_entry(menu_entry, "B");
+            menu_entry_add_entry(menu_entry, "C");
+            menu_entry_add_entry(menu_entry, "D");
+            menu_entry_add_entry(menu_entry, "E");
+            menu_entry_add_entry(menu_entry, "F");
+            menu_entry->selected_entry = 0;
+            menu_entry->selectable = 2;
+            menu_entry->callback = callback_gamegenie_edit;
+        }
 
-    menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "-");
-    menu_add_entry(menu, menu_entry);
-    menu_entry->selectable = 0;
+        menu_entry = new_menu_entry(0);
+        menu_entry_set_text(menu_entry, "-");
+        menu_add_entry(menu, menu_entry);
+        menu_entry->selectable = 0;
 
-    menu_entry = new_menu_entry(1);
-    menu_entry_set_text(menu_entry, "");
-    menu_add_entry(menu, menu_entry);
-    menu_entry_add_entry(menu_entry, "0");
-    menu_entry_add_entry(menu_entry, "1");
-    menu_entry_add_entry(menu_entry, "2");
-    menu_entry_add_entry(menu_entry, "3");
-    menu_entry_add_entry(menu_entry, "4");
-    menu_entry_add_entry(menu_entry, "5");
-    menu_entry_add_entry(menu_entry, "6");
-    menu_entry_add_entry(menu_entry, "7");
-    menu_entry_add_entry(menu_entry, "8");
-    menu_entry_add_entry(menu_entry, "9");
-    menu_entry_add_entry(menu_entry, "A");
-    menu_entry_add_entry(menu_entry, "B");
-    menu_entry_add_entry(menu_entry, "C");
-    menu_entry_add_entry(menu_entry, "D");
-    menu_entry_add_entry(menu_entry, "E");
-    menu_entry_add_entry(menu_entry, "F");
-    menu_entry->selected_entry = 0;
-    menu_entry->callback = callback_apply_gamegenie;
+        for (j = 0; j < 3; j++) {
+            menu_entry = new_menu_entry(1);
+            menu_entry_set_text(menu_entry, "");
+            menu_add_entry(menu, menu_entry);
+            menu_entry_add_entry(menu_entry, "0");
+            menu_entry_add_entry(menu_entry, "1");
+            menu_entry_add_entry(menu_entry, "2");
+            menu_entry_add_entry(menu_entry, "3");
+            menu_entry_add_entry(menu_entry, "4");
+            menu_entry_add_entry(menu_entry, "5");
+            menu_entry_add_entry(menu_entry, "6");
+            menu_entry_add_entry(menu_entry, "7");
+            menu_entry_add_entry(menu_entry, "8");
+            menu_entry_add_entry(menu_entry, "9");
+            menu_entry_add_entry(menu_entry, "A");
+            menu_entry_add_entry(menu_entry, "B");
+            menu_entry_add_entry(menu_entry, "C");
+            menu_entry_add_entry(menu_entry, "D");
+            menu_entry_add_entry(menu_entry, "E");
+            menu_entry_add_entry(menu_entry, "F");
+            menu_entry->selected_entry = 0;
+            menu_entry->selectable = 2;
+            menu_entry->callback = callback_gamegenie_edit;
+        }
+    }
 
-    menu_entry = new_menu_entry(1);
-    menu_entry_set_text(menu_entry, "");
-    menu_add_entry(menu, menu_entry);
-    menu_entry_add_entry(menu_entry, "0");
-    menu_entry_add_entry(menu_entry, "1");
-    menu_entry_add_entry(menu_entry, "2");
-    menu_entry_add_entry(menu_entry, "3");
-    menu_entry_add_entry(menu_entry, "4");
-    menu_entry_add_entry(menu_entry, "5");
-    menu_entry_add_entry(menu_entry, "6");
-    menu_entry_add_entry(menu_entry, "7");
-    menu_entry_add_entry(menu_entry, "8");
-    menu_entry_add_entry(menu_entry, "9");
-    menu_entry_add_entry(menu_entry, "A");
-    menu_entry_add_entry(menu_entry, "B");
-    menu_entry_add_entry(menu_entry, "C");
-    menu_entry_add_entry(menu_entry, "D");
-    menu_entry_add_entry(menu_entry, "E");
-    menu_entry_add_entry(menu_entry, "F");
-    menu_entry->selected_entry = 0;
-    menu_entry->callback = callback_apply_gamegenie;
+    menu_entry->callback = callback_gamegenie_confirm; // set last entry callback to "confirm" function
 
-    menu_entry = new_menu_entry(1);
-    menu_entry_set_text(menu_entry, "");
-    menu_add_entry(menu, menu_entry);
-    menu_entry_add_entry(menu_entry, "0");
-    menu_entry_add_entry(menu_entry, "1");
-    menu_entry_add_entry(menu_entry, "2");
-    menu_entry_add_entry(menu_entry, "3");
-    menu_entry_add_entry(menu_entry, "4");
-    menu_entry_add_entry(menu_entry, "5");
-    menu_entry_add_entry(menu_entry, "6");
-    menu_entry_add_entry(menu_entry, "7");
-    menu_entry_add_entry(menu_entry, "8");
-    menu_entry_add_entry(menu_entry, "9");
-    menu_entry_add_entry(menu_entry, "A");
-    menu_entry_add_entry(menu_entry, "B");
-    menu_entry_add_entry(menu_entry, "C");
-    menu_entry_add_entry(menu_entry, "D");
-    menu_entry_add_entry(menu_entry, "E");
-    menu_entry_add_entry(menu_entry, "F");
-    menu_entry->selected_entry = 0;
-    menu_entry->callback = callback_apply_gamegenie;
+    // get code values from stored
+    for (i = 0; i < numcodes_gg; i++) {
+        offset = 11 * i;
+        offset2 = 9 * i;
 
-    menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "-");
-    menu_add_entry(menu, menu_entry);
-    menu_entry->selectable = 0;
-
-    menu_entry = new_menu_entry(1);
-    menu_entry_set_text(menu_entry, "");
-    menu_add_entry(menu, menu_entry);
-    menu_entry_add_entry(menu_entry, "0");
-    menu_entry_add_entry(menu_entry, "1");
-    menu_entry_add_entry(menu_entry, "2");
-    menu_entry_add_entry(menu_entry, "3");
-    menu_entry_add_entry(menu_entry, "4");
-    menu_entry_add_entry(menu_entry, "5");
-    menu_entry_add_entry(menu_entry, "6");
-    menu_entry_add_entry(menu_entry, "7");
-    menu_entry_add_entry(menu_entry, "8");
-    menu_entry_add_entry(menu_entry, "9");
-    menu_entry_add_entry(menu_entry, "A");
-    menu_entry_add_entry(menu_entry, "B");
-    menu_entry_add_entry(menu_entry, "C");
-    menu_entry_add_entry(menu_entry, "D");
-    menu_entry_add_entry(menu_entry, "E");
-    menu_entry_add_entry(menu_entry, "F");
-    menu_entry->selected_entry = 0;
-    menu_entry->callback = callback_apply_gamegenie;
-
-    menu_entry = new_menu_entry(1);
-    menu_entry_set_text(menu_entry, "");
-    menu_add_entry(menu, menu_entry);
-    menu_entry_add_entry(menu_entry, "0");
-    menu_entry_add_entry(menu_entry, "1");
-    menu_entry_add_entry(menu_entry, "2");
-    menu_entry_add_entry(menu_entry, "3");
-    menu_entry_add_entry(menu_entry, "4");
-    menu_entry_add_entry(menu_entry, "5");
-    menu_entry_add_entry(menu_entry, "6");
-    menu_entry_add_entry(menu_entry, "7");
-    menu_entry_add_entry(menu_entry, "8");
-    menu_entry_add_entry(menu_entry, "9");
-    menu_entry_add_entry(menu_entry, "A");
-    menu_entry_add_entry(menu_entry, "B");
-    menu_entry_add_entry(menu_entry, "C");
-    menu_entry_add_entry(menu_entry, "D");
-    menu_entry_add_entry(menu_entry, "E");
-    menu_entry_add_entry(menu_entry, "F");
-    menu_entry->selected_entry = 0;
-    menu_entry->callback = callback_apply_gamegenie;
-
-    menu_entry = new_menu_entry(1);
-    menu_entry_set_text(menu_entry, "");
-    menu_add_entry(menu, menu_entry);
-    menu_entry_add_entry(menu_entry, "0");
-    menu_entry_add_entry(menu_entry, "1");
-    menu_entry_add_entry(menu_entry, "2");
-    menu_entry_add_entry(menu_entry, "3");
-    menu_entry_add_entry(menu_entry, "4");
-    menu_entry_add_entry(menu_entry, "5");
-    menu_entry_add_entry(menu_entry, "6");
-    menu_entry_add_entry(menu_entry, "7");
-    menu_entry_add_entry(menu_entry, "8");
-    menu_entry_add_entry(menu_entry, "9");
-    menu_entry_add_entry(menu_entry, "A");
-    menu_entry_add_entry(menu_entry, "B");
-    menu_entry_add_entry(menu_entry, "C");
-    menu_entry_add_entry(menu_entry, "D");
-    menu_entry_add_entry(menu_entry, "E");
-    menu_entry_add_entry(menu_entry, "F");
-    menu_entry->selected_entry = 0;
-    menu_entry->callback = callback_apply_gamegenie;
+        menu->entries[0 + offset]->selected_entry = ggcheats[0 + offset2];
+        menu->entries[1 + offset]->selected_entry = ggcheats[1 + offset2];
+        menu->entries[2 + offset]->selected_entry = ggcheats[2 + offset2];
+        menu->entries[4 + offset]->selected_entry = ggcheats[3 + offset2];
+        menu->entries[5 + offset]->selected_entry = ggcheats[4 + offset2];
+        menu->entries[6 + offset]->selected_entry = ggcheats[5 + offset2];
+        menu->entries[8 + offset]->selected_entry = ggcheats[6 + offset2];
+        menu->entries[9 + offset]->selected_entry = ggcheats[7 + offset2];
+        menu->entries[10 + offset]->selected_entry = ggcheats[8 + offset2];
+    }
     
     menu_cheat(menu);
 
     delete_menu(menu);
 }
 
-std::string numtohextext(int num){
-    std::locale loc;
-    char buffer[4];
-    std::string result;
-    sprintf(buffer, "%x", num);
+static void callback_gamegenie_confirm(menu_t *caller_menu) {
 
-    result = std::string(buffer);
-    result = std::toupper(buffer[0],loc);
+    if (editmode == 0){ //user pressed START, he wants to apply cheats   
 
-    return result;
+        menu_t *menu;
+        menu_entry_t *menu_entry;
+        (void) caller_menu;
+        menu = new_menu();
+
+        menu_set_header(menu, menu_main_title.c_str());
+        menu_set_title(menu, "Game Genie");
+        menu->back_callback = callback_gamegenie_back;
+
+        menu_entry = new_menu_entry(0);
+        menu_entry_set_text(menu_entry, "Apply Cheats?");
+        menu_add_entry(menu, menu_entry);
+        menu_entry->selectable = 0;
+        menu_entry->callback = callback_gamegenie_apply;
+        
+        menu_main(menu);
+
+        delete_menu(menu);
+
+        int i, offset, offset2;
+
+        // after applying cheats the stored codes are cleared, so we must reload code values
+        for (i = 0; i < numcodes_gg; i++) {
+            offset = 11 * i;
+            offset2 = 9 * i;
+
+            caller_menu->entries[0 + offset]->selected_entry = ggcheats[0 + offset2];
+            caller_menu->entries[1 + offset]->selected_entry = ggcheats[1 + offset2];
+            caller_menu->entries[2 + offset]->selected_entry = ggcheats[2 + offset2];
+            caller_menu->entries[4 + offset]->selected_entry = ggcheats[3 + offset2];
+            caller_menu->entries[5 + offset]->selected_entry = ggcheats[4 + offset2];
+            caller_menu->entries[6 + offset]->selected_entry = ggcheats[5 + offset2];
+            caller_menu->entries[8 + offset]->selected_entry = ggcheats[6 + offset2];
+            caller_menu->entries[9 + offset]->selected_entry = ggcheats[7 + offset2];
+            caller_menu->entries[10 + offset]->selected_entry = ggcheats[8 + offset2]; 
+        }
+
+    } else if (editmode == 1){ //user is in edit mode, he wants to exit edit mode
+
+        callback_gamegenie_edit(caller_menu);
+
+    }
 }
 
-static void callback_apply_gamegenie(menu_t *caller_menu) {
+static void callback_gamegenie_apply(menu_t *caller_menu) {
+
     std::string a1 = "0", a2 = "0", a3 = "0", a4 = "0", a5 = "0", a6 = "0", a7 = "0", a8 = "0", a9 = "0";
+    int i, offset;
+    std::string cheat_a = "", multicheat = "";
 
-    a1 = numtohextext(caller_menu->entries[0]->selected_entry);
-    a2 = numtohextext(caller_menu->entries[1]->selected_entry);
-    a3 = numtohextext(caller_menu->entries[2]->selected_entry);
-    a4 = numtohextext(caller_menu->entries[4]->selected_entry);
-    a5 = numtohextext(caller_menu->entries[5]->selected_entry);
-    a6 = numtohextext(caller_menu->entries[6]->selected_entry);
-    a7 = numtohextext(caller_menu->entries[8]->selected_entry);
-    a8 = numtohextext(caller_menu->entries[9]->selected_entry);
-    a9 = numtohextext(caller_menu->entries[10]->selected_entry);
+    for (i = 0; i < numcodes_gg; i++) {
+        offset = 9 * i;
 
-    std::string cheat_a = a1 + a2 + a3 + "-" + a4 + a5 + a6 + "-" + a7 + a8 + a9 + ";";
+        // get code values from stored
+        a1 = numtohextext(ggcheats[0 + offset]);
+        a2 = numtohextext(ggcheats[1 + offset]);
+        a3 = numtohextext(ggcheats[2 + offset]);
+        a4 = numtohextext(ggcheats[3 + offset]);
+        a5 = numtohextext(ggcheats[4 + offset]);
+        a6 = numtohextext(ggcheats[5 + offset]);
+        a7 = numtohextext(ggcheats[6 + offset]);
+        a8 = numtohextext(ggcheats[7 + offset]);
+        a9 = numtohextext(ggcheats[8 + offset]);
 
-    printf("GG Cheat: %s\n", cheat_a.c_str());
+        if ((a7 == "0") && (a8 == "0") && (a9 == "0")){
+            cheat_a = a1 + a2 + a3 + "-" + a4 + a5 + a6 + ";";
+        } else {
+            cheat_a = a1 + a2 + a3 + "-" + a4 + a5 + a6 + "-" + a7 + a8 + a9 + ";";
+        }
 
-    gambatte_p->setGameGenie(cheat_a);
+        if ((cheat_a != "000-000-000;") && (cheat_a != "000-000;")){
+            multicheat += cheat_a;
+        } 
+    }
 
-    caller_menu->quit = 1;
+    gambatte_p->setGameGenie(multicheat); // apply cheats
+
+    // clear all codes after applying them
+    for (i = 0; i < (numcodes_gg * 9); i++) {
+        ggcheats[i] = 0;
+    }
+    
+    caller_menu->quit = 1; 
+}
+
+static void callback_gamegenie_edit(menu_t *caller_menu) {
+
+    if(editmode == 0){ //enter edit mode
+
+        selectedcode = floor(caller_menu->selected_entry / 11);
+        editmode = 1;
+
+    } else if (editmode == 1){ //exit edit mode
+
+        editmode = 0;
+        int loop = 0;
+        int i, offset, offset2;
+
+        do {
+            if ((caller_menu->selected_entry % 11 == 0) || (caller_menu->selected_entry == 0)){
+                //do nothing
+            } else {
+                --caller_menu->selected_entry;
+            }
+            loop++;
+        } while ((caller_menu->selected_entry % 11 != 0) && (loop < 11)); //go to first entry in that line
+
+        // save code values
+        for (i = 0; i < numcodes_gg; i++) {
+            offset = 11 * i;
+            offset2 = 9 * i; 
+
+            ggcheats[0 + offset2] = caller_menu->entries[0 + offset]->selected_entry;
+            ggcheats[1 + offset2] = caller_menu->entries[1 + offset]->selected_entry;
+            ggcheats[2 + offset2] = caller_menu->entries[2 + offset]->selected_entry;
+            ggcheats[3 + offset2] = caller_menu->entries[4 + offset]->selected_entry;
+            ggcheats[4 + offset2] = caller_menu->entries[5 + offset]->selected_entry;
+            ggcheats[5 + offset2] = caller_menu->entries[6 + offset]->selected_entry;
+            ggcheats[6 + offset2] = caller_menu->entries[8 + offset]->selected_entry;
+            ggcheats[7 + offset2] = caller_menu->entries[9 + offset]->selected_entry;
+            ggcheats[8 + offset2] = caller_menu->entries[10 + offset]->selected_entry;
+        }
+    }
+
+    caller_menu->quit = 0;
 }
 
 static void callback_gamegenie_back(menu_t *caller_menu) {
-    caller_menu->quit = 1;
-}
 
+    if(editmode == 0){ // exit to previous menu screen
+
+        selectedcode = 0;
+        /*int i;
+
+        //clear all codes on exit
+        for (i = 0; i < (numcodes_gg * 9); i++) {
+            ggcheats[i] = 0;
+        }*/
+
+        caller_menu->quit = 1;
+
+    } else if (editmode == 1){ // exit edit mode without saving changes
+
+        editmode = 0;
+        int loop = 0;
+        int i, offset, offset2;
+
+        do {
+            if ((caller_menu->selected_entry % 11 == 0) || (caller_menu->selected_entry == 0)){
+                //do nothing
+            } else {
+                --caller_menu->selected_entry;
+            }
+            loop++;
+        } while ((caller_menu->selected_entry % 11 != 0) && (loop < 11)); //go to first entry in that line
+
+        // reload code values from stored
+        for (i = 0; i < numcodes_gg; i++) {
+            offset = 11 * i;
+            offset2 = 9 * i;
+
+            caller_menu->entries[0 + offset]->selected_entry = ggcheats[0 + offset2];
+            caller_menu->entries[1 + offset]->selected_entry = ggcheats[1 + offset2];
+            caller_menu->entries[2 + offset]->selected_entry = ggcheats[2 + offset2];
+            caller_menu->entries[4 + offset]->selected_entry = ggcheats[3 + offset2];
+            caller_menu->entries[5 + offset]->selected_entry = ggcheats[4 + offset2];
+            caller_menu->entries[6 + offset]->selected_entry = ggcheats[5 + offset2];
+            caller_menu->entries[8 + offset]->selected_entry = ggcheats[6 + offset2];
+            caller_menu->entries[9 + offset]->selected_entry = ggcheats[7 + offset2];
+            caller_menu->entries[10 + offset]->selected_entry = ggcheats[8 + offset2]; 
+        }
+
+        caller_menu->quit = 0;
+    }
+}
 
 /* ==================== GAME SHARK MENU =========================== */
 
-static void callback_apply_gameshark(menu_t *caller_menu);
+static void callback_gameshark_enabledisable(menu_t *caller_menu);
+static void callback_gameshark_edit(menu_t *caller_menu);
 static void callback_gameshark_back(menu_t *caller_menu);
 
 static void callback_gameshark(menu_t *caller_menu) {
+
+    int i, j, offset, offset2, enabled;
 
     menu_t *menu;
     menu_entry_t *menu_entry;
@@ -1140,174 +1199,192 @@ static void callback_gameshark(menu_t *caller_menu) {
     menu_set_title(menu, "Game Shark");
     menu->back_callback = callback_gameshark_back;
 
-// ----------- CHEAT A --------------//
+    for (i = 0; i < numcodes_gs; i++) {
 
-    menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "0");
-    menu_add_entry(menu, menu_entry);
-    menu_entry->selectable = 0;
+        enabled = gscheatsenabled[i];
 
-    menu_entry = new_menu_entry(0);
-    menu_entry_set_text(menu_entry, "1");
-    menu_add_entry(menu, menu_entry);
-    menu_entry->selectable = 0;
+        menu_entry = new_menu_entry(1);
+        menu_entry_set_text(menu_entry, "");
+        menu_add_entry(menu, menu_entry);
+        menu_entry_add_entry(menu_entry, "[ ]");
+        menu_entry_add_entry(menu_entry, "[~]");
+        menu_entry->selected_entry = enabled;
+        menu_entry->callback = callback_gameshark_enabledisable;
 
-    menu_entry = new_menu_entry(1);
-    menu_entry_set_text(menu_entry, "");
-    menu_add_entry(menu, menu_entry);
-    menu_entry_add_entry(menu_entry, "0");
-    menu_entry_add_entry(menu_entry, "1");
-    menu_entry_add_entry(menu_entry, "2");
-    menu_entry_add_entry(menu_entry, "3");
-    menu_entry_add_entry(menu_entry, "4");
-    menu_entry_add_entry(menu_entry, "5");
-    menu_entry_add_entry(menu_entry, "6");
-    menu_entry_add_entry(menu_entry, "7");
-    menu_entry_add_entry(menu_entry, "8");
-    menu_entry_add_entry(menu_entry, "9");
-    menu_entry_add_entry(menu_entry, "A");
-    menu_entry_add_entry(menu_entry, "B");
-    menu_entry_add_entry(menu_entry, "C");
-    menu_entry_add_entry(menu_entry, "D");
-    menu_entry_add_entry(menu_entry, "E");
-    menu_entry_add_entry(menu_entry, "F");
-    menu_entry->selected_entry = 0;
-    menu_entry->callback = callback_apply_gameshark;
+        menu_entry = new_menu_entry(0);
+        menu_entry_set_text(menu_entry, " ");
+        menu_add_entry(menu, menu_entry);
+        menu_entry->selectable = 0;
 
-    menu_entry = new_menu_entry(1);
-    menu_entry_set_text(menu_entry, "");
-    menu_add_entry(menu, menu_entry);
-    menu_entry_add_entry(menu_entry, "0");
-    menu_entry_add_entry(menu_entry, "1");
-    menu_entry_add_entry(menu_entry, "2");
-    menu_entry_add_entry(menu_entry, "3");
-    menu_entry_add_entry(menu_entry, "4");
-    menu_entry_add_entry(menu_entry, "5");
-    menu_entry_add_entry(menu_entry, "6");
-    menu_entry_add_entry(menu_entry, "7");
-    menu_entry_add_entry(menu_entry, "8");
-    menu_entry_add_entry(menu_entry, "9");
-    menu_entry_add_entry(menu_entry, "A");
-    menu_entry_add_entry(menu_entry, "B");
-    menu_entry_add_entry(menu_entry, "C");
-    menu_entry_add_entry(menu_entry, "D");
-    menu_entry_add_entry(menu_entry, "E");
-    menu_entry_add_entry(menu_entry, "F");
-    menu_entry->selected_entry = 0;
-    menu_entry->callback = callback_apply_gameshark;
+        for (j = 0; j < 8; j++) {
+            menu_entry = new_menu_entry(1);
+            menu_entry_set_text(menu_entry, "");
+            menu_add_entry(menu, menu_entry);
+            menu_entry_add_entry(menu_entry, "0");
+            menu_entry_add_entry(menu_entry, "1");
+            menu_entry_add_entry(menu_entry, "2");
+            menu_entry_add_entry(menu_entry, "3");
+            menu_entry_add_entry(menu_entry, "4");
+            menu_entry_add_entry(menu_entry, "5");
+            menu_entry_add_entry(menu_entry, "6");
+            menu_entry_add_entry(menu_entry, "7");
+            menu_entry_add_entry(menu_entry, "8");
+            menu_entry_add_entry(menu_entry, "9");
+            menu_entry_add_entry(menu_entry, "A");
+            menu_entry_add_entry(menu_entry, "B");
+            menu_entry_add_entry(menu_entry, "C");
+            menu_entry_add_entry(menu_entry, "D");
+            menu_entry_add_entry(menu_entry, "E");
+            menu_entry_add_entry(menu_entry, "F");
+            menu_entry->selected_entry = 0;
+            menu_entry->selectable = 2;
+            menu_entry->callback = callback_gameshark_edit;
+        }
+    }
 
-    menu_entry = new_menu_entry(1);
-    menu_entry_set_text(menu_entry, "");
-    menu_add_entry(menu, menu_entry);
-    menu_entry_add_entry(menu_entry, "0");
-    menu_entry_add_entry(menu_entry, "1");
-    menu_entry_add_entry(menu_entry, "2");
-    menu_entry_add_entry(menu_entry, "3");
-    menu_entry_add_entry(menu_entry, "4");
-    menu_entry_add_entry(menu_entry, "5");
-    menu_entry_add_entry(menu_entry, "6");
-    menu_entry_add_entry(menu_entry, "7");
-    menu_entry_add_entry(menu_entry, "8");
-    menu_entry_add_entry(menu_entry, "9");
-    menu_entry_add_entry(menu_entry, "A");
-    menu_entry_add_entry(menu_entry, "B");
-    menu_entry_add_entry(menu_entry, "C");
-    menu_entry_add_entry(menu_entry, "D");
-    menu_entry_add_entry(menu_entry, "E");
-    menu_entry_add_entry(menu_entry, "F");
-    menu_entry->selected_entry = 0;
-    menu_entry->callback = callback_apply_gameshark;
+    // get code values from stored
+    for (i = 0; i < numcodes_gs; i++) {
+        offset = 10 * i;
+        offset2 = 8 * i;
 
-    menu_entry = new_menu_entry(1);
-    menu_entry_set_text(menu_entry, "");
-    menu_add_entry(menu, menu_entry);
-    menu_entry_add_entry(menu_entry, "0");
-    menu_entry_add_entry(menu_entry, "1");
-    menu_entry_add_entry(menu_entry, "2");
-    menu_entry_add_entry(menu_entry, "3");
-    menu_entry_add_entry(menu_entry, "4");
-    menu_entry_add_entry(menu_entry, "5");
-    menu_entry_add_entry(menu_entry, "6");
-    menu_entry_add_entry(menu_entry, "7");
-    menu_entry_add_entry(menu_entry, "8");
-    menu_entry_add_entry(menu_entry, "9");
-    menu_entry_add_entry(menu_entry, "A");
-    menu_entry_add_entry(menu_entry, "B");
-    menu_entry_add_entry(menu_entry, "C");
-    menu_entry_add_entry(menu_entry, "D");
-    menu_entry_add_entry(menu_entry, "E");
-    menu_entry_add_entry(menu_entry, "F");
-    menu_entry->selected_entry = 0;
-    menu_entry->callback = callback_apply_gameshark;
+        menu->entries[0 + offset]->selected_entry = gscheatsenabled[0 + i];
 
-    menu_entry = new_menu_entry(1);
-    menu_entry_set_text(menu_entry, "");
-    menu_add_entry(menu, menu_entry);
-    menu_entry_add_entry(menu_entry, "0");
-    menu_entry_add_entry(menu_entry, "1");
-    menu_entry_add_entry(menu_entry, "2");
-    menu_entry_add_entry(menu_entry, "3");
-    menu_entry_add_entry(menu_entry, "4");
-    menu_entry_add_entry(menu_entry, "5");
-    menu_entry_add_entry(menu_entry, "6");
-    menu_entry_add_entry(menu_entry, "7");
-    menu_entry_add_entry(menu_entry, "8");
-    menu_entry_add_entry(menu_entry, "9");
-    menu_entry_add_entry(menu_entry, "A");
-    menu_entry_add_entry(menu_entry, "B");
-    menu_entry_add_entry(menu_entry, "C");
-    menu_entry_add_entry(menu_entry, "D");
-    menu_entry_add_entry(menu_entry, "E");
-    menu_entry_add_entry(menu_entry, "F");
-    menu_entry->selected_entry = 0;
-    menu_entry->callback = callback_apply_gameshark;
-
-    menu_entry = new_menu_entry(1);
-    menu_entry_set_text(menu_entry, "");
-    menu_add_entry(menu, menu_entry);
-    menu_entry_add_entry(menu_entry, "0");
-    menu_entry_add_entry(menu_entry, "1");
-    menu_entry_add_entry(menu_entry, "2");
-    menu_entry_add_entry(menu_entry, "3");
-    menu_entry_add_entry(menu_entry, "4");
-    menu_entry_add_entry(menu_entry, "5");
-    menu_entry_add_entry(menu_entry, "6");
-    menu_entry_add_entry(menu_entry, "7");
-    menu_entry_add_entry(menu_entry, "8");
-    menu_entry_add_entry(menu_entry, "9");
-    menu_entry_add_entry(menu_entry, "A");
-    menu_entry_add_entry(menu_entry, "B");
-    menu_entry_add_entry(menu_entry, "C");
-    menu_entry_add_entry(menu_entry, "D");
-    menu_entry_add_entry(menu_entry, "E");
-    menu_entry_add_entry(menu_entry, "F");
-    menu_entry->selected_entry = 0;
-    menu_entry->callback = callback_apply_gameshark;
+        menu->entries[2 + offset]->selected_entry = gscheats[0 + offset2];
+        menu->entries[3 + offset]->selected_entry = gscheats[1 + offset2];
+        menu->entries[4 + offset]->selected_entry = gscheats[2 + offset2];
+        menu->entries[5 + offset]->selected_entry = gscheats[3 + offset2];
+        menu->entries[6 + offset]->selected_entry = gscheats[4 + offset2];
+        menu->entries[7 + offset]->selected_entry = gscheats[5 + offset2];
+        menu->entries[8 + offset]->selected_entry = gscheats[6 + offset2];
+        menu->entries[9 + offset]->selected_entry = gscheats[7 + offset2]; 
+    }
     
     menu_cheat(menu);
 
     delete_menu(menu);
 }
 
-static void callback_apply_gameshark(menu_t *caller_menu) {
-    std::string a1 = "0", a2 = "0", a3 = "0", a4 = "0", a5 = "0", a6 = "0";
+static void callback_gameshark_enabledisable(menu_t *caller_menu) {
 
-    a1 = numtohextext(caller_menu->entries[2]->selected_entry);
-    a2 = numtohextext(caller_menu->entries[3]->selected_entry);
-    a3 = numtohextext(caller_menu->entries[4]->selected_entry);
-    a4 = numtohextext(caller_menu->entries[5]->selected_entry);
-    a5 = numtohextext(caller_menu->entries[6]->selected_entry);
-    a6 = numtohextext(caller_menu->entries[7]->selected_entry);
+    if (caller_menu->entries[caller_menu->selected_entry]->selected_entry == 0) {
+        caller_menu->entries[caller_menu->selected_entry]->selected_entry = 1;
+    } else {
+        caller_menu->entries[caller_menu->selected_entry]->selected_entry = 0;
+    }
+    gscheatsenabled[(caller_menu->selected_entry / 10)] = caller_menu->entries[caller_menu->selected_entry]->selected_entry; //store the value
 
-    std::string cheat_a = "01" + a1 + a2 + a3 + a4 + a5 + a6 + ";";
+    caller_menu->quit = 0;
+}
 
-    printf("GS Cheat: %s\n", cheat_a.c_str());
+static void callback_gameshark_edit(menu_t *caller_menu) {
 
-    gambatte_p->setGameShark(cheat_a);
+    if(editmode == 0){ //enter edit mode
 
-    caller_menu->quit = 1;
+        selectedcode = floor(caller_menu->selected_entry / 10);
+        editmode = 1;
+
+    } else if (editmode == 1){ //exit edit mode
+
+        editmode = 0;
+        int loop = 0;
+        int i, offset, offset2;
+
+        do {
+            if ((caller_menu->selected_entry % 10 == 0) || (caller_menu->selected_entry == 0)){
+                //do nothing
+            } else {
+                --caller_menu->selected_entry;
+            }
+            loop++;
+        } while ((caller_menu->selected_entry % 10 != 0) && (loop < 10)); //go to first entry in that line
+        caller_menu->selected_entry += 2; //go to second entry in that line
+
+        // save code values
+        for (i = 0; i < numcodes_gs; i++) {
+            offset = 10 * i;
+            offset2 = 8 * i; 
+
+            gscheats[0 + offset2] = caller_menu->entries[2 + offset]->selected_entry;
+            gscheats[1 + offset2] = caller_menu->entries[3 + offset]->selected_entry;
+            gscheats[2 + offset2] = caller_menu->entries[4 + offset]->selected_entry;
+            gscheats[3 + offset2] = caller_menu->entries[5 + offset]->selected_entry;
+            gscheats[4 + offset2] = caller_menu->entries[6 + offset]->selected_entry;
+            gscheats[5 + offset2] = caller_menu->entries[7 + offset]->selected_entry;
+            gscheats[6 + offset2] = caller_menu->entries[8 + offset]->selected_entry;
+            gscheats[7 + offset2] = caller_menu->entries[9 + offset]->selected_entry;
+        }
+    }
+
+    caller_menu->quit = 0;
 }
 
 static void callback_gameshark_back(menu_t *caller_menu) {
-    caller_menu->quit = 1;
+
+    if(editmode == 0){ // exit to previous menu screen and apply cheats
+
+        selectedcode = 0;
+        std::string a1 = "0", a2 = "0", a3 = "0", a4 = "0", a5 = "0", a6 = "0", a7 = "0", a8 = "0";
+        int i, offset, enabled;
+        std::string cheat_a = "", multicheat = "";
+
+        for (i = 0; i < numcodes_gs; i++) {
+            offset = 8 * i;
+
+            // get code values from stored
+            a1 = numtohextext(gscheats[0 + offset]);
+            a2 = numtohextext(gscheats[1 + offset]);
+            a3 = numtohextext(gscheats[2 + offset]);
+            a4 = numtohextext(gscheats[3 + offset]);
+            a5 = numtohextext(gscheats[4 + offset]);
+            a6 = numtohextext(gscheats[5 + offset]);
+            a7 = numtohextext(gscheats[6 + offset]);
+            a8 = numtohextext(gscheats[7 + offset]);
+
+            cheat_a = a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8 + ";";
+            enabled = gscheatsenabled[i];
+
+            if ((cheat_a != "00000000;") && (enabled == 1)){
+                multicheat += cheat_a;
+            } 
+        }
+
+        gambatte_p->setGameShark(multicheat); // apply cheats
+
+        caller_menu->quit = 1;
+
+    } else if (editmode == 1){ // exit edit mode without saving changes
+
+        editmode = 0;
+        int loop = 0;
+        int i, offset, offset2;
+
+        do {
+            if ((caller_menu->selected_entry % 10 == 0) || (caller_menu->selected_entry == 0)){
+                //do nothing
+            } else {
+                --caller_menu->selected_entry;
+            }
+            loop++;
+        } while ((caller_menu->selected_entry % 10 != 0) && (loop < 10)); //go to first entry in that line
+        caller_menu->selected_entry += 2; //go to second entry in that line
+
+        // reload code values from stored
+        for (i = 0; i < numcodes_gs; i++) {
+            offset = 10 * i;
+            offset2 = 8 * i;
+
+            caller_menu->entries[0 + offset]->selected_entry = gscheatsenabled[0 + i];
+
+            caller_menu->entries[2 + offset]->selected_entry = gscheats[0 + offset2];
+            caller_menu->entries[3 + offset]->selected_entry = gscheats[1 + offset2];
+            caller_menu->entries[4 + offset]->selected_entry = gscheats[2 + offset2];
+            caller_menu->entries[5 + offset]->selected_entry = gscheats[3 + offset2];
+            caller_menu->entries[6 + offset]->selected_entry = gscheats[4 + offset2];
+            caller_menu->entries[7 + offset]->selected_entry = gscheats[5 + offset2];
+            caller_menu->entries[8 + offset]->selected_entry = gscheats[6 + offset2];
+            caller_menu->entries[9 + offset]->selected_entry = gscheats[7 + offset2]; 
+        }
+
+        caller_menu->quit = 0;
+    }
 }
